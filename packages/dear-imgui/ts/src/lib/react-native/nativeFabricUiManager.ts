@@ -57,18 +57,11 @@ export default class {
             this.cloningNode = null;
         }
 
-        const { children, type, id, ...props } = payload;
+        const { children, type, id, elementType, ...props } = payload;
 
-        // if (type === "Table") {
-        //     console.log(
-        //         "createNode",
-        //         generatedId,
-        //         uiViewClassName,
-        //         requiresClone,
-        //         payload,
-        //         fiberNode,
-        //     );
-        // }
+        // currently elementType can be either 'node' or 'widget'
+
+        console.log("createNode", generatedId, uiViewClassName, requiresClone, payload, fiberNode);
 
         const widget = { ...props, id: generatedId, type };
 

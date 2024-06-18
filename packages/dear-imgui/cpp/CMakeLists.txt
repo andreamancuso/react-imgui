@@ -42,7 +42,7 @@ if (DEFINED EMSCRIPTEN)
         implotview.cpp
     )
 
-    target_include_directories(reactDearImgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${DEPS}/wasm-glfw3-boilerplate ${DEPS}/IconFontCppHeaders ${DEPS}/ReactivePlusPlus/src/rpp)
+    target_include_directories(reactDearImgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${DEPS}/wasm-glfw3-boilerplate ${DEPS}/IconFontCppHeaders ${DEPS}/ReactivePlusPlus/src/rpp ${DEPS}/yoga)
 
     # https://github.com/emscripten-core/emscripten/issues/18476
     # -c -fexperimental-library

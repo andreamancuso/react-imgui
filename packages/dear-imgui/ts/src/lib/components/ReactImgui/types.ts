@@ -3,6 +3,7 @@ import { ReactImgui } from "./components";
 import { MainComponentProps } from "../ReactImgui";
 import { StyleRules } from "src/lib/stylesheet/stylesheet";
 import { ImVec2 } from "src/lib/wasm/wasm-app-types";
+import { YogaStyle } from "src/lib/stylesheet/yoga-style";
 
 export type Primitive = string | number | boolean;
 
@@ -180,6 +181,11 @@ type ReactElementWidgets = {
 };
 
 export type ReactElementWidgetsFlat = ReactElementWidgets[keyof ReactElementWidgets];
+
+export type YogaNode = {
+    style?: YogaStyle;
+    children?: WidgetReactNode;
+};
 
 export type ImguiWidget<
     K extends WidgetKeys,

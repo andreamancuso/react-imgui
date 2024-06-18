@@ -10,3 +10,6 @@
 [submodule "packages/dear-imgui/cpp/deps/vcpkg"]
 	path = packages/dear-imgui/cpp/deps/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "packages/dear-imgui/cpp/deps/yoga"]
+	path = packages/dear-imgui/cpp/deps/yoga
+	url = https://github.com/facebook/yoga.git

@@ -77,6 +77,8 @@ export const Tables = () => {
         }
     }, []);
 
+    // use case: align both buttons at the right hand side of the container
+
     return (
         <ReactImgui.Fragment>
             <ReactImgui.SameLine>
@@ -93,7 +95,14 @@ export const Tables = () => {
                     <ReactImgui.Table ref={tableRef4} columns={tableColumns} clipRows={10} />
                 </ReactImgui.Child>
             </ReactImgui.SameLine>
-            <ReactImgui.SameLine>
+            <ReactImgui.Node
+                style={{
+                    width: "100%",
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    gap: { column: 10 },
+                }}
+            >
                 <ReactImgui.Button
                     onClick={handleAppendDataToTableClick}
                     label="Add data to table"
@@ -104,7 +113,7 @@ export const Tables = () => {
                     label="Stop adding data"
                     style={styleSheet.secondaryButton}
                 />
-            </ReactImgui.SameLine>
+            </ReactImgui.Node>
         </ReactImgui.Fragment>
     );
 };

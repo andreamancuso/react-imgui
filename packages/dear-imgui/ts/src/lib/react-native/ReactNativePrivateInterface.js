@@ -54,6 +54,15 @@ export default {
                                 style: true,
                             },
                         };
+
+                    case "node":
+                        return {
+                            validAttributes: {
+                                id: true,
+                                type: true,
+                                style: true,
+                            },
+                        };
                 }
 
                 return {
