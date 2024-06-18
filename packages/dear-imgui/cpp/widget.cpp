@@ -23,10 +23,19 @@
 #include <nlohmann/json.hpp>
 
 #include "shared.h"
+#include "element.h"
 #include "widget.h"
 #include "reactimgui.h"
 
 using json = nlohmann::json;
+
+Widget::Widget(int id) : Element(id) {
+    m_type = "Unknown";
+}
+
+const std::string& Widget::GetElementType() {
+    return "widget";
+};
 
 // todo: seems redundant
 void Widget::HandleChildren(ReactImgui* view) {
@@ -36,6 +45,8 @@ void Widget::HandleChildren(ReactImgui* view) {
 void Widget::Patch(const json& widgetPatchDef, ReactImgui* view) {};
 
 void Widget::PreRender(ReactImgui* view) {};
+
+void Widget::Render(ReactImgui* view) {};
 
 void Widget::PostRender(ReactImgui* view) {};
 
@@ -140,6 +151,14 @@ std::optional<BaseStyle> StyledWidget::ExtractStyle(const json& widgetDef, React
 
     return maybeStyle;
 };
+
+StyledWidget::StyledWidget(int id) : Widget(id) {}
+
+StyledWidget::StyledWidget(int id, std::optional<BaseStyle>& maybeStyle) : Widget(id) {
+    if (maybeStyle.has_value()) {
+        m_style.emplace(std::make_unique<BaseStyle>(maybeStyle.value()));
+    }
+}
 
 void StyledWidget::ReplaceStyle(BaseStyle& newStyle) {
     m_style.reset();
@@ -284,11 +303,26 @@ void StyledWidget::PostRender(ReactImgui* view) {
     }
 };
 
+Fragment::Fragment(int id) : Widget(id) {
+    m_type = "Fragment";
+    m_handlesChildrenWithinRenderMethod = true;
+};
+
 void Fragment::Render(ReactImgui* view) {
     // ImGui::Text("Begin Fragment (ID: %d)", m_id);
     Widget::HandleChildren(view);
     // ImGui::Text("End Fragment (ID: %d)", m_id);
 };
+
+Window::Window(int id, std::string title, float width, float height, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "Window";
+    m_handlesChildrenWithinRenderMethod = true;
+
+    m_title = title;
+    m_width = width;
+    m_height = height;
+    m_open = true;
+}
 
 void Window::Render(ReactImgui* view) {
     // ImGui::PushID(m_id);
@@ -303,10 +337,39 @@ void Window::Render(ReactImgui* view) {
     // ImGui::PopID();
 };
 
+void Window::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef["title"].is_string()) {
+            m_title = widgetPatchDef["title"].template get<std::string>();
+        }
+        if (widgetPatchDef["width"].is_string()) {
+            m_width = widgetPatchDef["width"].template get<float>();
+        }
+        if (widgetPatchDef["height"].is_string()) {
+            m_height = widgetPatchDef["height"].template get<float>();
+        }
+    }
+};
+
+Group::Group(int id, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "Group";
+    m_handlesChildrenWithinRenderMethod = true;
+}
+
 void Group::Render(ReactImgui* view) {
     ImGui::BeginGroup();
     Widget::HandleChildren(view);
     ImGui::EndGroup();
+};
+
+Child::Child(int id, float width, float height, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "Child";
+    m_handlesChildrenWithinRenderMethod = true;
+
+    m_width = width;
+    m_height = height;
 };
 
 void Child::Render(ReactImgui* view) {
@@ -317,6 +380,24 @@ void Child::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void Child::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef["width"].is_string()) {
+            m_width = widgetPatchDef["width"].template get<float>();
+        }
+        if (widgetPatchDef["height"].is_string()) {
+            m_height = widgetPatchDef["height"].template get<float>();
+        }
+    }
+};
+
+SameLine::SameLine(int id) : Widget(id) {
+    m_type = "SameLine";
+    m_handlesChildrenWithinRenderMethod = true;
+}
+
 void SameLine::Render(ReactImgui* view) {
     // Special case
     if (view->m_hierarchy.contains(m_id)) {
@@ -324,7 +405,7 @@ void SameLine::Render(ReactImgui* view) {
 
         int i = 0;
         for (auto& childId : view->m_hierarchy[m_id]) {
-            view->RenderWidgets(childId);
+            view->RenderElements(childId);
 
             if (i < (size)) {
                 ImGui::SameLine();
@@ -341,14 +422,39 @@ void Separator::Render(ReactImgui* view) {
     ImGui::Separator();
 };
 
+Indent::Indent(int id, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "Indent";
+    m_handlesChildrenWithinRenderMethod = true;
+}
+
 void Indent::Render(ReactImgui* view) {
     ImGui::Indent();
     Widget::HandleChildren(view);
     ImGui::Unindent();
 };
 
+void SeparatorText::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
 void SeparatorText::Render(ReactImgui* view) {
     ImGui::SeparatorText(m_label.c_str());
+};
+
+void BulletText::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("text") && widgetPatchDef["text"].is_string()) {
+            m_text = widgetPatchDef["text"].template get<std::string>();
+        }
+    }
 };
 
 void BulletText::Render(ReactImgui* view) {
@@ -357,6 +463,16 @@ void BulletText::Render(ReactImgui* view) {
 
 void UnformattedText::Render(ReactImgui* view) {
     ImGui::TextUnformatted(m_text.c_str());
+};
+
+void UnformattedText::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("text") && widgetPatchDef["text"].is_string()) {
+            m_text = widgetPatchDef["text"].template get<std::string>();
+        }
+    }
 };
 
 std::unique_ptr<UnformattedText> UnformattedText::makeWidget(const json& widgetDef, ReactImgui* view) {
@@ -377,6 +493,21 @@ void DisabledText::Render(ReactImgui* view) {
     ImGui::TextDisabled(m_text.c_str());
 };
 
+void DisabledText::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("text") && widgetPatchDef["text"].is_string()) {
+            m_text = widgetPatchDef["text"].template get<std::string>();
+        }
+    }
+};
+
+TabBar::TabBar(int id, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "TabBar";
+    m_handlesChildrenWithinRenderMethod = true;
+}
+
 void TabBar::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     // todo: double-check if we need to pass a proper id here?
@@ -387,6 +518,12 @@ void TabBar::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+TabItem::TabItem(int id, std::string& label, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "TabItem";
+    m_handlesChildrenWithinRenderMethod = true;
+    m_label = label;
+}
+
 void TabItem::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     if (ImGui::BeginTabItem(m_label.c_str())) {
@@ -396,6 +533,22 @@ void TabItem::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void TabItem::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
+CollapsingHeader::CollapsingHeader(int id, std::string& label, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "CollapsingHeader";
+    m_handlesChildrenWithinRenderMethod = true;
+    m_label = label;
+}
+
 void CollapsingHeader::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     if (ImGui::CollapsingHeader(m_label.c_str())) {
@@ -403,6 +556,22 @@ void CollapsingHeader::Render(ReactImgui* view) {
     }
     ImGui::PopID();
 };
+
+void CollapsingHeader::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
+TextWrap::TextWrap(int id, double& width, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "TextWrap";
+    m_handlesChildrenWithinRenderMethod = true;
+    m_width = width;
+}
 
 void TextWrap::Render(ReactImgui* view) {
     ImGui::PushTextWrapPos(m_width);
@@ -412,6 +581,21 @@ void TextWrap::Render(ReactImgui* view) {
     ImGui::PopTextWrapPos();
 };
 
+void TextWrap::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("width") && widgetPatchDef["width"].is_string()) {
+            m_width = widgetPatchDef["width"].template get<double>();
+        }
+    }
+};
+
+ItemTooltip::ItemTooltip(int id, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "ItemTooltip";
+    m_handlesChildrenWithinRenderMethod = true;
+}
+
 void ItemTooltip::Render(ReactImgui* view) {
     if (ImGui::BeginItemTooltip()) {
         Widget::HandleChildren(view);
@@ -419,6 +603,12 @@ void ItemTooltip::Render(ReactImgui* view) {
         ImGui::EndTooltip();
     }
 };
+
+TreeNode::TreeNode(int id, std::string& label, std::optional<BaseStyle>& style) : StyledWidget(id, style) {
+    m_type = "TreeNode";
+    m_handlesChildrenWithinRenderMethod = true;
+    m_label = label;
+}
 
 void TreeNode::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
@@ -431,6 +621,16 @@ void TreeNode::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void TreeNode::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
 void Combo::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     if (ImGui::Combo(m_label.c_str(), &m_selectedIndex, m_itemsSeparatedByZeros.get())) {
@@ -439,10 +639,30 @@ void Combo::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void Combo::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
 void InputText::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     ImGui::InputText(m_label.c_str(), m_bufferPointer.get(), 100, inputTextFlags, InputTextCb, (void*)this);
     ImGui::PopID();
+};
+
+void InputText::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
 };
 
 int InputText::InputTextCb(ImGuiInputTextCallbackData* data) {
@@ -462,6 +682,16 @@ void Checkbox::Render(ReactImgui* view) {
         view->m_onBooleanValueChange(m_id, m_checked);
     }
     ImGui::PopID();
+};
+
+void Checkbox::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
 };
 
 std::unique_ptr<Button> Button::makeWidget(const json& widgetDef, ReactImgui* view) {
@@ -498,6 +728,17 @@ void Button::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void Button::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+        UpdateSize();
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+    }
+};
+
 void Slider::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
     if (m_type == "angle") {
@@ -510,6 +751,22 @@ void Slider::Render(ReactImgui* view) {
         }
     }
     ImGui::PopID();
+};
+
+void Slider::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+        if (widgetPatchDef.contains("min") && widgetPatchDef["min"].is_number()) {
+            m_min = widgetPatchDef["min"].template get<float>();
+        }
+        if (widgetPatchDef.contains("max") && widgetPatchDef["max"].is_number()) {
+            m_max = widgetPatchDef["max"].template get<float>();
+        }
+    }
 };
 
 void MultiSlider::Render(ReactImgui* view) {
@@ -530,6 +787,25 @@ void MultiSlider::Render(ReactImgui* view) {
     }
 
     ImGui::PopID();
+};
+
+void MultiSlider::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+
+        if (widgetPatchDef.contains("label") && widgetPatchDef["label"].is_string()) {
+            m_label = widgetPatchDef["label"].template get<std::string>();
+        }
+        if (widgetPatchDef.contains("min") && widgetPatchDef["min"].is_number()) {
+            m_min = widgetPatchDef["min"].template get<float>();
+        }
+        if (widgetPatchDef.contains("max") && widgetPatchDef["max"].is_number()) {
+            m_max = widgetPatchDef["max"].template get<float>();
+        }
+        if (widgetPatchDef.contains("decimalDigits") && widgetPatchDef["decimalDigits"].is_number()) {
+            m_decimalDigits = widgetPatchDef["decimalDigits"].template get<int>();
+        }
+    }
 };
 
 void Table::Render(ReactImgui* view) {
@@ -604,6 +880,13 @@ void Table::Render(ReactImgui* view) {
     ImGui::PopID();
 };
 
+void Table::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+        // not sure what can be patched - presumably the columns? though that'd likely force us to clear the data
+    }
+};
+
 void ClippedMultiLineTextRenderer::Render(ReactImgui* view) {
     ImGui::PushID(m_id);
 
@@ -627,4 +910,11 @@ void ClippedMultiLineTextRenderer::Render(ReactImgui* view) {
     // ImGui::Text("%d lines", m_lineOffsets.Size);
 
     ImGui::PopID();
+};
+
+void ClippedMultiLineTextRenderer::Patch(const json& widgetPatchDef, ReactImgui* view) {
+    if (widgetPatchDef.is_object()) {
+        StyledWidget::Patch(widgetPatchDef, view);
+        // not sure what can be patched
+    }
 };

@@ -171,12 +171,12 @@ class WasmRunner {
             m_glWasm->SetWindowSize(width, height);
         }
 
-        void setWidget(std::string& widgetJsonAsString) {
-            m_view->SetWidget(widgetJsonAsString);
+        void setElement(std::string& elementJsonAsString) {
+            m_view->SetElement(elementJsonAsString);
         }
 
-        void patchWidget(int id, std::string& widgetJsonAsString) {
-            m_view->PatchWidget(id, widgetJsonAsString);
+        void patchElement(int id, std::string& elementJsonAsString) {
+            m_view->PatchElement(id, elementJsonAsString);
         }
 
         void setChildren(int id, const std::vector<int>& childrenIds) {
@@ -304,12 +304,12 @@ void resizeWindow(int width, int height) {
     pRunner->resizeWindow(width, height);
 }
 
-void setWidget(std::string widgetsJson) {
-    pRunner->setWidget(widgetsJson);
+void setElement(std::string elementJson) {
+    pRunner->setElement(elementJson);
 }
 
-void patchWidget(int id, std::string widgetsJson) {
-    pRunner->patchWidget(id, widgetsJson);
+void patchElement(int id, std::string elementJson) {
+    pRunner->patchElement(id, elementJson);
 }
 
 void setChildren(int id, std::string childrenIds) {
@@ -347,8 +347,8 @@ void patchStyle(std::string styleDef) {
 EMSCRIPTEN_BINDINGS(my_module) {
     emscripten::function("exit", &_exit);
     emscripten::function("resizeWindow", &resizeWindow);
-    emscripten::function("setWidget", &setWidget);
-    emscripten::function("patchWidget", &patchWidget);
+    emscripten::function("setElement", &setElement);
+    emscripten::function("patchElement", &patchElement);
     emscripten::function("setChildren", &setChildren);
     emscripten::function("appendChild", &appendChild);
     emscripten::function("getChildren", &getChildren);

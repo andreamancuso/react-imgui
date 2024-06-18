@@ -24,27 +24,29 @@
 using json = nlohmann::json;
 
 #include "shared.h"
+#include "element.h"
 #include "implotview.h"
 
 #pragma once
 
 class Widget;
+class LayoutNode;
 
 class ReactImgui : public ImPlotView {
     private:
         std::unordered_map<int, rpp::subjects::replay_subject<TableData>> m_tableSubjects;
         std::mutex m_tableSubjectsMutex;
 
-        std::unordered_map<std::string, std::function<std::unique_ptr<Widget>(const json&, ReactImgui*)>> m_widget_init_fn;
+        std::unordered_map<std::string, std::function<std::unique_ptr<Element>(const json&, ReactImgui*)>> m_element_init_fn;
 
-        std::unordered_map<int, std::unique_ptr<Widget>> m_widgets;
-        std::mutex m_widgets_mutex;
+        std::unordered_map<int, std::unique_ptr<Element>> m_elements;
+        std::mutex m_elements_mutex;
 
-        void InitWidget(const json& widgetDef);
+        void InitElement(const json& elementDef);
         
         void SetUpFloatFormatChars();
 
-        void SetUpWidgetCreatorFunctions();
+        void SetUpElementCreatorFunctions();
         
         void HandleTableData(int id, TableData val);
         
@@ -70,7 +72,7 @@ class ReactImgui : public ImPlotView {
             std::optional<std::string>& rawStyleOverridesDefs
         );
 
-        void RenderWidgetById(int id);
+        void RenderElementById(int id);
 
         void SetEventHandlers(
             OnTextChangedCallback onInputTextChangeFn,
@@ -89,11 +91,11 @@ class ReactImgui : public ImPlotView {
 
         void RenderChildren(int id);
 
-        void RenderWidgets(int id = 0);
+        void RenderElements(int id = 0);
 
-        void SetWidget(std::string& widgetJsonAsString);
+        void SetElement(std::string& elementJsonAsString);
 
-        void PatchWidget(int id, std::string& widgetJsonAsString);
+        void PatchElement(int id, std::string& elementJsonAsString);
 
         void SetChildren(int id, const std::vector<int>& childIds);
 
@@ -119,3 +121,7 @@ class ReactImgui : public ImPlotView {
         void PatchStyle(const json& styleDef);
 };
 
+template <typename T, typename std::enable_if<std::is_base_of<Widget, T>::value, int>::type = 0>
+std::unique_ptr<T> makeWidget(const json& val, ReactImgui* view);
+
+std::unique_ptr<LayoutNode> makeNode(const json& val, ReactImgui* view);

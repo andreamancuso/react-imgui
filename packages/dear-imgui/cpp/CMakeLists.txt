@@ -32,14 +32,25 @@ set(DEPS ${CMAKE_CURRENT_SOURCE_DIR}/deps)
 set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
 
 if (DEFINED EMSCRIPTEN)
+    file(GLOB YOGA_SOURCES CONFIGURE_DEPENDS
+        ${DEPS}/yoga/yoga/*.cpp
+        ${DEPS}/yoga/yoga/**/*.cpp)
+
 	add_executable(reactDearImgui main.cpp
         shared.cpp
+        element.cpp
         widget.cpp
+        layout_node.cpp
         reactimgui.cpp
         ${DEPS}/wasm-glfw3-boilerplate/view.cpp
         ${DEPS}/wasm-glfw3-boilerplate/glwasm.cpp
         imguiview.cpp
         implotview.cpp
+        ${YOGA_SOURCES}
+        # ${DEPS}/yoga/yoga/YGEnums.cpp
+        # ${DEPS}/yoga/yoga/YGNode.cpp
+        # ${DEPS}/yoga/yoga/YGNodeLayout.cpp
+        # ${DEPS}/yoga/yoga/YGNodeStyle.cpp
     )
 
     target_include_directories(reactDearImgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${DEPS}/wasm-glfw3-boilerplate ${DEPS}/IconFontCppHeaders ${DEPS}/ReactivePlusPlus/src/rpp ${DEPS}/yoga)

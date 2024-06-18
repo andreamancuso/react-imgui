@@ -63,7 +63,13 @@ export default class {
 
         console.log("createNode", generatedId, uiViewClassName, requiresClone, payload, fiberNode);
 
-        const widget = { ...props, id: generatedId, type };
+        const widget = {
+            ...props,
+            id: generatedId,
+            type: fiberNode.type === "node" ? "Node" : type,
+        };
+
+        console.log(JSON.stringify(widget));
 
         this.wasmModule?.setWidget(JSON.stringify(widget));
 
