@@ -48,7 +48,7 @@ class Widget : public Element {
 
         Widget(int id);
 
-        virtual const std::string& GetElementType();
+        virtual const char* GetElementType();
 
         virtual void HandleChildren(ReactImgui* view);
 

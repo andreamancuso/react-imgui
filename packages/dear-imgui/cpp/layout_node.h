@@ -21,7 +21,7 @@ class LayoutNode : public Element {
 
         LayoutNode(int id);
 
-        virtual const std::string& GetElementType();
+        virtual const char* GetElementType();
 
         virtual void HandleChildren(ReactImgui* view);
 
@@ -35,11 +35,11 @@ class LayoutNode : public Element {
 
         static std::unique_ptr<LayoutNode> makeNode(const json& val, ReactImgui* view);
 
-        std::optional<YGAlign> ResolveAlignItems(std::string def);
+        size_t GetChildCount();
 
-        std::optional<YGEdge> ResolveEdge(const std::string& edgeKey);
+        void InsertChild(LayoutNode* child, size_t index);
 
-        std::optional<YGGutter> ResolveGutter(const std::string& gutterKey);
+        void ApplyStyle(const json& styleDef);
 
         void SetDirection(YGDirection direction) {
             YGNodeStyleSetDirection(m_node, direction);
@@ -204,5 +204,11 @@ class LayoutNode : public Element {
         void SetMaxHeightPercent(const float percent) {
             YGNodeStyleSetMaxHeightPercent(m_node, percent);
         }
+
+        std::optional<YGAlign> ResolveAlignItems(std::string def);
+
+        std::optional<YGEdge> ResolveEdge(const std::string& edgeKey);
+
+        std::optional<YGGutter> ResolveGutter(const std::string& gutterKey);
 };
 

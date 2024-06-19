@@ -120,17 +120,17 @@ void ReactImgui::RenderChildren(int id) {
     }
 };
 
-void ReactImgui::InitElement(const json& widgetDef) {
-    if (widgetDef.is_object() && widgetDef.contains("type")) {
-        std::string type = widgetDef["type"].template get<std::string>();
+void ReactImgui::InitElement(const json& elementDef) {
+    if (elementDef.is_object() && elementDef.contains("type")) {
+        std::string type = elementDef["type"].template get<std::string>();
 
         if (m_element_init_fn.contains(type)) {
-            int id = widgetDef["id"].template get<int>();
+            int id = elementDef["id"].template get<int>();
 
-            const std::lock_guard<std::mutex> widgetLock(m_elements_mutex);
+            const std::lock_guard<std::mutex> elementLock(m_elements_mutex);
             const std::lock_guard<std::mutex> hierarchyLock(m_hierarchy_mutex);
 
-            m_elements[id] = m_element_init_fn[type](widgetDef, this);
+            m_elements[id] = m_element_init_fn[type](elementDef, this);
             m_hierarchy[id] = std::vector<int>();
 
             if (type == "Table") {
@@ -146,7 +146,7 @@ void ReactImgui::InitElement(const json& widgetDef) {
                 m_tableSubjects[id].get_observable() | rpp::ops::subscribe(handler);
             }
         } else {
-            printf("unrecognised widget type: '%s'\n", type.c_str());
+            printf("unrecognised element type: '%s'\n", type.c_str());
         }
     } else {
         printf("received JSON either not an object or does not contain type property\n");
@@ -162,7 +162,7 @@ void ReactImgui::HandleTableData(int id, TableData val) {
 void ReactImgui::HandleBufferedTableData(int id, std::vector<TableData> val) {
     // printf("%d\n", (int)val.size()); // I'm seeing 50 the first time this gets called, then 1 subsequent times...
 
-    const std::lock_guard<std::mutex> widgetLock(m_elements_mutex);
+    const std::lock_guard<std::mutex> elementLock(m_elements_mutex);
 
     size_t totalSize = 0;
 
@@ -260,7 +260,7 @@ void ReactImgui::Render(int window_width, int window_height) {
     ImGui_ImplWGPU_NewFrame();
     ImGui_ImplGlfw_NewFrame();
 
-    const std::lock_guard<std::mutex> widgetsLock(m_elements_mutex);
+    const std::lock_guard<std::mutex> elementsLock(m_elements_mutex);
     const std::lock_guard<std::mutex> hierarchyLock(m_hierarchy_mutex);
 
     ImGui::NewFrame();
@@ -370,23 +370,40 @@ void ReactImgui::PatchStyle(const json& styleDef) {
     }
 };
 
-void ReactImgui::SetElement(std::string& widgetJsonAsString) {
-    InitElement(json::parse(widgetJsonAsString));
+void ReactImgui::SetElement(std::string& elementJsonAsString) {
+    InitElement(json::parse(elementJsonAsString));
 };
 
-void ReactImgui::PatchElement(int id, std::string& widgetJsonAsString) {
+void ReactImgui::PatchElement(int id, std::string& elementJsonAsString) {
     const std::lock_guard<std::mutex> lock(m_elements_mutex);
 
     if (m_elements.contains(id)) {
-        auto widgetDef = json::parse(widgetJsonAsString);
-        auto pWidget = m_elements[id].get();
+        auto elementDef = json::parse(elementJsonAsString);
+        auto pElement = m_elements[id].get();
 
-        pWidget->Patch(widgetDef, this);
+        pElement->Patch(elementDef, this);
     }
 };
 
 void ReactImgui::SetChildren(int id, const std::vector<int>& childrenIds) {
-    const std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
+    const std::lock_guard<std::mutex> elementsLock(m_hierarchy_mutex);
+    const std::lock_guard<std::mutex> hierarchyLock(m_elements_mutex);
+
+    if (m_elements.contains(id) && m_elements[id]->GetElementType() == "node") {
+        auto parentNode = static_cast<LayoutNode*>(m_elements[id].get());
+        auto size = childrenIds.size();
+
+        for (int i = 0; i < size; i++) {
+            auto childId = childrenIds[i];
+
+            if (m_elements.contains(childId) && m_elements[childId]->GetElementType() == "node") {
+                auto childNode = static_cast<LayoutNode*>(m_elements[childId].get());
+
+                parentNode->InsertChild(childNode, i);
+            }
+        }
+    }
+
     m_hierarchy[id] = childrenIds;
 };
 
@@ -394,6 +411,17 @@ void ReactImgui::AppendChild(int parentId, int childId) {
     if (m_hierarchy.contains(parentId)) {
         if ( std::find(m_hierarchy[parentId].begin(), m_hierarchy[parentId].end(), childId) == m_hierarchy[parentId].end() ) {
             const std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
+            const std::lock_guard<std::mutex> elementsLock(m_hierarchy_mutex);
+
+            if (m_elements[parentId]->GetElementType() == "node" && m_elements[childId]->GetElementType() == "node") {
+                auto parentNode = static_cast<LayoutNode*>(m_elements[parentId].get());
+                auto childNode = static_cast<LayoutNode*>(m_elements[childId].get());
+
+                auto childCount = parentNode->GetChildCount();
+
+                parentNode->InsertChild(childNode, childCount);
+            }
+
             m_hierarchy[parentId].push_back(childId);
         }
     }

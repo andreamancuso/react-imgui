@@ -15,27 +15,83 @@ using json = nlohmann::json;
 
 LayoutNode::LayoutNode(int id) : Element(id) {
     m_node = YGNodeNew();
+    m_handlesChildrenWithinRenderMethod = true;
 }
 
 std::unique_ptr<LayoutNode> LayoutNode::makeNode(const json& nodeDef, ReactImgui* view) {
     auto id = nodeDef["id"].template get<int>();
+    auto node = std::make_unique<LayoutNode>(id);
 
-    return std::make_unique<LayoutNode>(id);
+    if (nodeDef.contains("style") && nodeDef["style"].is_object()) {
+        node->ApplyStyle(nodeDef["style"]);
+    }
+
+    return node;
 };
 
-const std::string& LayoutNode::GetElementType() {
+const char* LayoutNode::GetElementType() {
     return "node";
 };
 
-void LayoutNode::HandleChildren(ReactImgui* view) {};
+void LayoutNode::InsertChild(LayoutNode* child, size_t index) {
+    // printf("Yoga Linking %d (%s) to %d (%s) using index %d\n", child->m_id, child->GetElementType(), m_id, GetElementType(), index);
+
+    YGNodeInsertChild(m_node, child->m_node, index);
+};
+
+void LayoutNode::HandleChildren(ReactImgui* view) {
+    view->RenderChildren(m_id);
+};
 
 void LayoutNode::PreRender(ReactImgui* view) {};
 
-void LayoutNode::Render(ReactImgui* view) {};
+void LayoutNode::Render(ReactImgui* view) {
+    ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
+
+    YGNodeRef owner = YGNodeGetOwner(m_node);
+
+    if (owner == nullptr) { // root
+        YGNodeCalculateLayout(m_node, contentRegionAvail.x, contentRegionAvail.y, YGDirectionLTR);
+    } else {
+
+    }
+
+    float left = YGNodeLayoutGetLeft(m_node);
+    float top = YGNodeLayoutGetTop(m_node);
+    float right = YGNodeLayoutGetRight(m_node);
+    float bottom = YGNodeLayoutGetBottom(m_node);
+    float width = YGNodeLayoutGetWidth(m_node);
+    float height = YGNodeLayoutGetHeight(m_node);
+
+    YGValue leftPosition = YGNodeStyleGetPosition(m_node, YGEdgeLeft);
+
+    YGDirection direction = YGNodeLayoutGetDirection(m_node);
+    bool hadOverflow = YGNodeLayoutGetHadOverflow(m_node);
+
+    ImGui::SetCursorPos(ImVec2(left, top)); // ?
+
+    ImGui::BeginChild("outer_child", ImVec2(width, height), ImGuiChildFlags_Border);
+
+    ImGui::Text("%f,%f", left, top);
+    ImGui::Text("%f,%f", width, height);
+    ImGui::Text("%f %d", leftPosition.value, leftPosition.unit);
+
+    HandleChildren(view);
+
+    ImGui::EndChild();
+
+    /**
+float YGNodeLayoutGetMargin(YGNodeConstRef node, YGEdge edge) {
+float YGNodeLayoutGetBorder(YGNodeConstRef node, YGEdge edge) {
+float YGNodeLayoutGetPadding(YGNodeConstRef node, YGEdge edge) {
+
+ImGui::BeginChild("outer_child", ImVec2(0, ImGui::GetFontSize() * 20.0f), ImGuiChildFlags_Border);
+     */
+};
 
 void LayoutNode::PostRender(ReactImgui* view) {};
 
-std::optional<YGAlign> ResolveAlignItems(const std::string& def) {
+std::optional<YGAlign> LayoutNode::ResolveAlignItems(std::string def) {
     std::optional<YGAlign> alignItems;
 
     if (def == "auto") {
@@ -55,9 +111,13 @@ std::optional<YGAlign> ResolveAlignItems(const std::string& def) {
     return alignItems;
 };
 
-void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
-    if (stylePatchDef.contains("direction") && stylePatchDef["direction"].is_string()) {
-        auto rawDirection = stylePatchDef["direction"].template get<std::string>();
+size_t LayoutNode::GetChildCount() {
+    return YGNodeGetChildCount(m_node);
+};
+
+void LayoutNode::ApplyStyle(const json& styleDef) {
+    if (styleDef.contains("direction") && styleDef["direction"].is_string()) {
+        auto rawDirection = styleDef["direction"].template get<std::string>();
         std::optional<YGDirection> direction;
 
         if (rawDirection == "inherit") {
@@ -69,12 +129,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (direction.has_value()) {
+            printf("Setting %s\n", "direction");
+
             SetDirection(direction.value());
         }
     }
     
-    if (stylePatchDef.contains("flexDirection") && stylePatchDef["flexDirection"].is_string()) {
-        auto rawFlexDirection = stylePatchDef["flexDirection"].template get<std::string>();
+    if (styleDef.contains("flexDirection") && styleDef["flexDirection"].is_string()) {
+        auto rawFlexDirection = styleDef["flexDirection"].template get<std::string>();
         std::optional<YGFlexDirection> flexDirection;
 
         if (rawFlexDirection == "column") {
@@ -88,12 +150,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (flexDirection.has_value()) {
+            printf("Setting %s\n", "flexDirection");
+
             SetFlexDirection(flexDirection.value());
         }
     }
     
-    if (stylePatchDef.contains("justifyContent") && stylePatchDef["justifyContent"].is_string()) {
-        auto rawJustifyContent = stylePatchDef["justifyContent"].template get<std::string>();
+    if (styleDef.contains("justifyContent") && styleDef["justifyContent"].is_string()) {
+        auto rawJustifyContent = styleDef["justifyContent"].template get<std::string>();
         std::optional<YGJustify> justifyContent;
 
         if (rawJustifyContent == "flex-start") {
@@ -111,12 +175,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (justifyContent.has_value()) {
+            printf("Setting %s: %s\n", "justifyContent", rawJustifyContent.c_str());
+
             SetJustifyContent(justifyContent.value());
         }
     }
     
-    if (stylePatchDef.contains("alignContent") && stylePatchDef["alignContent"].is_string()) {
-        auto rawAlignContent = stylePatchDef["alignContent"].template get<std::string>();
+    if (styleDef.contains("alignContent") && styleDef["alignContent"].is_string()) {
+        auto rawAlignContent = styleDef["alignContent"].template get<std::string>();
         std::optional<YGAlign> alignContent;
 
         if (rawAlignContent == "auto") {
@@ -138,30 +204,36 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (alignContent.has_value()) {
+            printf("Setting %s: %s\n", "alignContent", rawAlignContent.c_str());
+
             SetAlignContent(alignContent.value());
         }
     }
     
-    if (stylePatchDef.contains("alignItems") && stylePatchDef["alignItems"].is_string()) {
-        auto def = stylePatchDef["alignItems"].template get<std::string>();
+    if (styleDef.contains("alignItems") && styleDef["alignItems"].is_string()) {
+        auto def = styleDef["alignItems"].template get<std::string>();
         std::optional<YGAlign> alignItems = ResolveAlignItems(def);
 
         if (alignItems.has_value()) {
+            printf("Setting %s: %s\n", "alignItems", def.c_str());
+
             SetAlignItems(alignItems.value());
         }
     }
     
-    if (stylePatchDef.contains("alignSelf") && stylePatchDef["alignSelf"].is_string()) {
-        auto def = stylePatchDef["alignSelf"].template get<std::string>();
+    if (styleDef.contains("alignSelf") && styleDef["alignSelf"].is_string()) {
+        auto def = styleDef["alignSelf"].template get<std::string>();
         std::optional<YGAlign> alignSelf = ResolveAlignItems(def);
 
         if (alignSelf.has_value()) {
+            printf("Setting %s: %s\n", "alignSelf", def.c_str());
+
             SetAlignSelf(alignSelf.value());
         }
     }
     
-    if (stylePatchDef.contains("positionType") && stylePatchDef["positionType"].is_string()) {
-        auto rawPositionType = stylePatchDef["positionType"].template get<std::string>();
+    if (styleDef.contains("positionType") && styleDef["positionType"].is_string()) {
+        auto rawPositionType = styleDef["positionType"].template get<std::string>();
         std::optional<YGPositionType> positionType;
 
         if (rawPositionType == "static") {
@@ -173,12 +245,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (positionType.has_value()) {
+            printf("Setting %s: %s\n", "positionType", rawPositionType.c_str());
+
             SetPositionType(positionType.value());
         }
     }
     
-    if (stylePatchDef.contains("flexWrap") && stylePatchDef["flexWrap"].is_string()) {
-        auto rawFlexWrap = stylePatchDef["flexWrap"].template get<std::string>();
+    if (styleDef.contains("flexWrap") && styleDef["flexWrap"].is_string()) {
+        auto rawFlexWrap = styleDef["flexWrap"].template get<std::string>();
         std::optional<YGWrap> flexWrap;
 
         if (rawFlexWrap == "no-wrap") {
@@ -190,12 +264,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (flexWrap.has_value()) {
+            printf("Setting %s: %s\n", "flexWrap", rawFlexWrap.c_str());
+
             SetFlexWrap(flexWrap.value());
         }
     }
     
-    if (stylePatchDef.contains("overflow") && stylePatchDef["overflow"].is_string()) {
-        auto rawOverflow = stylePatchDef["overflow"].template get<std::string>();
+    if (styleDef.contains("overflow") && styleDef["overflow"].is_string()) {
+        auto rawOverflow = styleDef["overflow"].template get<std::string>();
         std::optional<YGOverflow> overflow;
 
         if (rawOverflow == "visible") {
@@ -207,12 +283,14 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (overflow.has_value()) {
+            printf("Setting %s: %s\n", "overflow", rawOverflow.c_str());
+
             SetOverflow(overflow.value());
         }
     }
     
-    if (stylePatchDef.contains("display") && stylePatchDef["display"].is_string()) {
-        auto rawDisplay = stylePatchDef["display"].template get<std::string>();
+    if (styleDef.contains("display") && styleDef["display"].is_string()) {
+        auto rawDisplay = styleDef["display"].template get<std::string>();
         std::optional<YGDisplay> display;
 
         if (rawDisplay == "flex") {
@@ -222,155 +300,206 @@ void LayoutNode::Patch(const json& stylePatchDef, ReactImgui* view) {
         }
 
         if (display.has_value()) {
+            printf("Setting %s: %s\n", "display", rawDisplay.c_str());
+
             SetDisplay(display.value());
         }
     }
     
-    if (stylePatchDef.contains("flex") && stylePatchDef["flex"].is_number()) {
-        SetFlex(stylePatchDef["flex"].template get<float>());
+    if (styleDef.contains("flex") && styleDef["flex"].is_number()) {
+        printf("Setting %s: %f\n", "flex", styleDef["flex"].template get<float>());
+
+        SetFlex(styleDef["flex"].template get<float>());
     }
     
-    if (stylePatchDef.contains("flexGrow") && stylePatchDef["flexGrow"].is_number()) {
-        SetFlexGrow(stylePatchDef["flexGrow"].template get<float>());
+    if (styleDef.contains("flexGrow") && styleDef["flexGrow"].is_number()) {
+        printf("Setting %s: %f\n", "flexGrow", styleDef["flexGrow"].template get<float>());
+
+        SetFlexGrow(styleDef["flexGrow"].template get<float>());
     }
     
-    if (stylePatchDef.contains("flexShrink") && stylePatchDef["flexShrink"].is_number()) {
-        SetFlexShrink(stylePatchDef["flexShrink"].template get<float>());
+    if (styleDef.contains("flexShrink") && styleDef["flexShrink"].is_number()) {
+        printf("Setting %s: %f\n", "flexShrink", styleDef["flexShrink"].template get<float>());
+
+        SetFlexShrink(styleDef["flexShrink"].template get<float>());
     }
     
-    if (stylePatchDef.contains("flexBasis")) {
-        if (stylePatchDef["flexBasis"].is_number()) {
+    if (styleDef.contains("flexBasis")) {
+        if (styleDef["flexBasis"].is_number()) {
             // todo: what about percentage? Does it make sense to handle it here or below with an explicit property?
-            SetFlexBasis(stylePatchDef["flexBasis"].template get<float>());
-        } else if (stylePatchDef["flexBasis"].is_string()) {
-            auto flexBasis = stylePatchDef["display"].template get<std::string>();
+            SetFlexBasis(styleDef["flexBasis"].template get<float>());
+
+            printf("Setting %s\n", "flexBasis");
+        } else if (styleDef["flexBasis"].is_string()) {
+            auto flexBasis = styleDef["display"].template get<std::string>();
 
             if (flexBasis == "auto") {
+                printf("Setting %s\n", "auto flexBasis");
+
                 SetFlexBasisAuto();
             }
         }
     }
     
-    if (stylePatchDef.contains("flexBasisPercent") && stylePatchDef["flexBasisPercent"].is_number()) {
-        SetFlexBasisPercent(stylePatchDef["flexBasisPercent"].template get<float>());
+    if (styleDef.contains("flexBasisPercent") && styleDef["flexBasisPercent"].is_number()) {
+        printf("Setting %s\n", "flexBasisPercent");
+
+        SetFlexBasisPercent(styleDef["flexBasisPercent"].template get<float>());
     }
     
-    if (stylePatchDef.contains("position") && stylePatchDef["position"].is_object()) {
-        for (auto& [key, item] : stylePatchDef["position"].items()) {
+    if (styleDef.contains("position") && styleDef["position"].is_object()) {
+        for (auto& [key, item] : styleDef["position"].items()) {
             if (item.is_number()) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
+                    printf("Setting %s\n", "position");
+
                     SetPosition(edge.value(), item.template get<float>());
                 }
             }
         }
     }
     
-    if (stylePatchDef.contains("margin") && stylePatchDef["margin"].is_object()) {
-        for (auto& [key, item] : stylePatchDef["margin"].items()) {
+    if (styleDef.contains("margin") && styleDef["margin"].is_object()) {
+        for (auto& [key, item] : styleDef["margin"].items()) {
             if (item.is_number()) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
+                    printf("Setting %s\n", "margin");
+
                     SetMargin(edge.value(), item.template get<float>());
                 }
             }
         }
     }
     
-    if (stylePatchDef.contains("padding") && stylePatchDef["padding"].is_object()) {
-        for (auto& [key, item] : stylePatchDef["padding"].items()) {
+    if (styleDef.contains("padding") && styleDef["padding"].is_object()) {
+        for (auto& [key, item] : styleDef["padding"].items()) {
             if (item.is_number()) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
+                    printf("Setting %s\n", "padding");
+
                     SetPadding(edge.value(), item.template get<float>());
                 }
             }
         }
     }
     
-    if (stylePatchDef.contains("border") && stylePatchDef["border"].is_object()) {
-        for (auto& [key, item] : stylePatchDef["border"].items()) {
+    if (styleDef.contains("border") && styleDef["border"].is_object()) {
+        for (auto& [key, item] : styleDef["border"].items()) {
             if (item.is_number()) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
+                    printf("Setting %s\n", "border");
+
                     SetBorder(edge.value(), item.template get<float>());
                 }
             }
         }
     }
     
-    if (stylePatchDef.contains("gap") && stylePatchDef["gap"].is_object()) {
-        for (auto& [key, item] : stylePatchDef["gap"].items()) {
+    if (styleDef.contains("gap") && styleDef["gap"].is_object()) {
+        for (auto& [key, item] : styleDef["gap"].items()) {
             if (item.is_number()) {
                 std::optional<YGGutter> gutter = ResolveGutter(key);
                 // todo: what about percentage?
                 if (gutter.has_value()) {
+                    printf("Setting %s\n", "gap");
+
+
                     SetGap(gutter.value(), item.template get<float>());
                 }
             }
         }
     }
 
-    if (stylePatchDef.contains("aspectRatio") && stylePatchDef["aspectRatio"].is_number()) {
-        SetAspectRatio(stylePatchDef["aspectRatio"].template get<float>());
+    if (styleDef.contains("aspectRatio") && styleDef["aspectRatio"].is_number()) {
+        printf("Setting %s\n", "aspectRatio");
+
+        SetAspectRatio(styleDef["aspectRatio"].template get<float>());
     }
 
-    if (stylePatchDef.contains("width")) {
-        if (stylePatchDef["width"].is_number()) {
+    if (styleDef.contains("width")) {
+        if (styleDef["width"].is_number()) {
             // todo: what about percentage?
-            SetWidth(stylePatchDef["width"].template get<float>());
-        } else if (stylePatchDef["width"].is_string()) {
-            auto width = stylePatchDef["width"].template get<std::string>();
+            SetWidth(styleDef["width"].template get<float>());
+
+            printf("Setting %s: %f\n", "width", styleDef["width"].template get<float>());
+        } else if (styleDef["width"].is_string()) {
+            auto width = styleDef["width"].template get<std::string>();
 
             if (width == "auto") {
+                printf("Setting %s\n", "auto width");
+
                 SetWidthAuto();
+            } else if (width == "100%") {
+                printf("Setting %s\n", "width 100pct");
+
+                SetWidthPercent(100);
             }
         }
     }
 
-    if (stylePatchDef.contains("minWidth")) {
-        if (stylePatchDef["minWidth"].is_number()) {
+    if (styleDef.contains("minWidth")) {
+        if (styleDef["minWidth"].is_number()) {
+            printf("Setting %s\n", "minWidth");
             // todo: what about percentage?
-            SetMinWidth(stylePatchDef["minWidth"].template get<float>());
+            SetMinWidth(styleDef["minWidth"].template get<float>());
         }
     }
 
-    if (stylePatchDef.contains("maxWidth")) {
-        if (stylePatchDef["maxWidth"].is_number()) {
+    if (styleDef.contains("maxWidth")) {
+        if (styleDef["maxWidth"].is_number()) {
+            printf("Setting %s\n", "maxWidth");
             // todo: what about percentage?
-            SetMaxWidth(stylePatchDef["maxWidth"].template get<float>());
+            SetMaxWidth(styleDef["maxWidth"].template get<float>());
         }
     }
 
-    if (stylePatchDef.contains("height")) {
-        if (stylePatchDef["height"].is_number()) {
+    if (styleDef.contains("height")) {
+        if (styleDef["height"].is_number()) {
+            printf("Setting %s: %f\n", "height", styleDef["height"].template get<float>());
             // todo: what about percentage?
-            SetHeight(stylePatchDef["height"].template get<float>());
-        } else if (stylePatchDef["height"].is_string()) {
-            auto height = stylePatchDef["height"].template get<std::string>();
+            SetHeight(styleDef["height"].template get<float>());
+        } else if (styleDef["height"].is_string()) {
+            auto height = styleDef["height"].template get<std::string>();
 
             if (height == "auto") {
+                printf("Setting %s\n", "auto height");
                 SetHeightAuto();
+            } else if (height == "100%") {
+                printf("Setting %s\n", "100pct height");
+                SetHeightPercent(100);
             }
         }
     }
 
-    if (stylePatchDef.contains("minHeight")) {
-        if (stylePatchDef["minHeight"].is_number()) {
+    if (styleDef.contains("minHeight")) {
+        if (styleDef["minHeight"].is_number()) {
+
+            printf("Setting %s\n", "minHeight");
             // todo: what about percentage?
-            SetMinHeight(stylePatchDef["minHeight"].template get<float>());
+            SetMinHeight(styleDef["minHeight"].template get<float>());
         }
     }
 
-    if (stylePatchDef.contains("maxHeight")) {
-        if (stylePatchDef["maxHeight"].is_number()) {
+    if (styleDef.contains("maxHeight")) {
+        if (styleDef["maxHeight"].is_number()) {
+            printf("Setting %s\n", "maxHeight");
             // todo: what about percentage?
-            SetMaxHeight(stylePatchDef["maxHeight"].template get<float>());
+            SetMaxHeight(styleDef["maxHeight"].template get<float>());
         }
+    }
+};
+
+void LayoutNode::Patch(const json& nodeDef, ReactImgui* view) {
+    if (nodeDef.contains("style") && nodeDef["style"].is_object()) {
+        ApplyStyle(nodeDef["style"]);
     }
 };
 

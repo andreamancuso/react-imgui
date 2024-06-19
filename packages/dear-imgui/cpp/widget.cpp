@@ -33,7 +33,7 @@ Widget::Widget(int id) : Element(id) {
     m_type = "Unknown";
 }
 
-const std::string& Widget::GetElementType() {
+const char* Widget::GetElementType() {
     return "widget";
 };
 

@@ -97,6 +97,7 @@ export enum ImGuiStyleVar {
 }
 
 // TypeScript bindings for emscripten-generated code.  Automatically generated at compile time.
+// TypeScript bindings for emscripten-generated code.  Automatically generated at compile time.
 declare namespace RuntimeExports {
     let HEAPF32: any;
     let HEAPF64: any;
@@ -606,10 +607,6 @@ export type ImGuiBackendFlags =
     | ImGuiBackendFlagsValue<4>
     | ImGuiBackendFlagsValue<8>;
 
-export interface ImGuiStyleVarValue<T extends number> {
-    value: T;
-}
-
 export interface ImGuiButtonFlagsValue<T extends number> {
     value: T;
 }
@@ -836,8 +833,8 @@ export type ImGuiViewportFlags =
 interface EmbindModule {
     exit(): void;
     resizeWindow(_0: number, _1: number): void;
-    setWidget(_0: EmbindString): void;
-    patchWidget(_0: number, _1: EmbindString): void;
+    setElement(_0: EmbindString): void;
+    patchElement(_0: number, _1: EmbindString): void;
     setChildren(_0: number, _1: EmbindString): void;
     appendChild(_0: number, _1: number): void;
     getChildren(_0: number): string;
@@ -845,6 +842,7 @@ interface EmbindModule {
     appendTextToClippedMultiLineTextRenderer(_0: number, _1: EmbindString): void;
     getTextLineHeightWithSpacing(): number;
     getStyle(): string;
+    patchStyle(_0: EmbindString): void;
     ImGuiWindowFlags: {
         None: ImGuiWindowFlagsValue<0>;
         NoTitleBar: ImGuiWindowFlagsValue<1>;
@@ -1251,40 +1249,6 @@ interface EmbindModule {
         HasMouseCursors: ImGuiBackendFlagsValue<2>;
         HasSetMousePos: ImGuiBackendFlagsValue<4>;
         RendererHasVtxOffset: ImGuiBackendFlagsValue<8>;
-    };
-    ImGuiStyleVar: {
-        Alpha: ImGuiStyleVarValue<0>;
-        DisabledAlpha: ImGuiStyleVarValue<1>;
-        WindowPadding: ImGuiStyleVarValue<2>;
-        WindowRounding: ImGuiStyleVarValue<3>;
-        WindowBorderSize: ImGuiStyleVarValue<4>;
-        WindowMinSize: ImGuiStyleVarValue<5>;
-        WindowTitleAlign: ImGuiStyleVarValue<6>;
-        ChildRounding: ImGuiStyleVarValue<7>;
-        ChildBorderSize: ImGuiStyleVarValue<8>;
-        PopupRounding: ImGuiStyleVarValue<9>;
-        PopupBorderSize: ImGuiStyleVarValue<10>;
-        FramePadding: ImGuiStyleVarValue<11>;
-        FrameRounding: ImGuiStyleVarValue<12>;
-        FrameBorderSize: ImGuiStyleVarValue<13>;
-        ItemSpacing: ImGuiStyleVarValue<14>;
-        ItemInnerSpacing: ImGuiStyleVarValue<15>;
-        IndentSpacing: ImGuiStyleVarValue<16>;
-        CellPadding: ImGuiStyleVarValue<17>;
-        ScrollbarSize: ImGuiStyleVarValue<18>;
-        ScrollbarRounding: ImGuiStyleVarValue<19>;
-        GrabMinSize: ImGuiStyleVarValue<20>;
-        GrabRounding: ImGuiStyleVarValue<21>;
-        TabRounding: ImGuiStyleVarValue<22>;
-        TabBorderSize: ImGuiStyleVarValue<23>;
-        TabBarBorderSize: ImGuiStyleVarValue<24>;
-        TableAngledHeadersAngle: ImGuiStyleVarValue<25>;
-        ButtonTextAlign: ImGuiStyleVarValue<27>;
-        SelectableTextAlign: ImGuiStyleVarValue<28>;
-        SeparatorTextBorderSize: ImGuiStyleVarValue<29>;
-        SeparatorTextAlign: ImGuiStyleVarValue<30>;
-        SeparatorTextPadding: ImGuiStyleVarValue<31>;
-        COUNT: ImGuiStyleVarValue<32>;
     };
     ImGuiButtonFlags: {
         None: ImGuiButtonFlagsValue<0>;

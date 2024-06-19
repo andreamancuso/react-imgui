@@ -32,6 +32,7 @@ set(DEPS ${CMAKE_CURRENT_SOURCE_DIR}/deps)
 set(CMAKE_EXECUTABLE_SUFFIX ".mjs")
 
 if (DEFINED EMSCRIPTEN)
+    # Copied from yoga's CMakeLists.txt 
     file(GLOB YOGA_SOURCES CONFIGURE_DEPENDS
         ${DEPS}/yoga/yoga/*.cpp
         ${DEPS}/yoga/yoga/**/*.cpp)
@@ -46,11 +47,8 @@ if (DEFINED EMSCRIPTEN)
         ${DEPS}/wasm-glfw3-boilerplate/glwasm.cpp
         imguiview.cpp
         implotview.cpp
+        # todo: maybe I should install Yoga using vcpkg
         ${YOGA_SOURCES}
-        # ${DEPS}/yoga/yoga/YGEnums.cpp
-        # ${DEPS}/yoga/yoga/YGNode.cpp
-        # ${DEPS}/yoga/yoga/YGNodeLayout.cpp
-        # ${DEPS}/yoga/yoga/YGNodeStyle.cpp
     )
 
     target_include_directories(reactDearImgui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${DEPS}/wasm-glfw3-boilerplate ${DEPS}/IconFontCppHeaders ${DEPS}/ReactivePlusPlus/src/rpp ${DEPS}/yoga)

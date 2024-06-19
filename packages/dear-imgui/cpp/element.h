@@ -29,16 +29,16 @@ class Element {
 
         Element(int id);
 
-        virtual const std::string& GetElementType();
+        virtual const char* GetElementType() = 0;
 
-        virtual void HandleChildren(ReactImgui* view);
+        virtual void HandleChildren(ReactImgui* view) = 0;
 
-        virtual void PreRender(ReactImgui* view);
+        virtual void PreRender(ReactImgui* view) = 0;
 
-        virtual void Render(ReactImgui* view);
+        virtual void Render(ReactImgui* view) = 0;
 
-        virtual void PostRender(ReactImgui* view);
+        virtual void PostRender(ReactImgui* view) = 0;
 
-        virtual void Patch(const json& elementPatchDef, ReactImgui* view);
+        virtual void Patch(const json& elementPatchDef, ReactImgui* view) = 0;
 };
 
