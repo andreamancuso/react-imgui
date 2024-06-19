@@ -15,11 +15,11 @@ const sampleData = [
 const styleSheet = RWStyleSheet.create({
     primaryButton: {
         colors: { [ImGuiCol.Button]: "ff6e59" },
-        vars: { [ImGuiStyleVar.FramePadding]: [40, 3] },
-        // width: 0.5,
+        // vars: { [ImGuiStyleVar.FramePadding]: [40, 3] },
+        width: 1,
     },
     secondaryButton: {
-        // width: 0.5,
+        width: 1,
     },
 });
 
@@ -83,64 +83,57 @@ export const Tables = () => {
         <ReactImgui.Node
             style={{
                 width: "100%",
-                height: "100%",
+                height: 500,
                 flexDirection: "column",
-                gap: { row: 10 },
+                margin: {
+                    left: 5,
+                    top: 25,
+                    right: 5,
+                },
             }}
         >
             <ReactImgui.Node
                 style={{
-                    // width: "100%",
                     flexDirection: "row",
                     justifyContent: "space-between",
-                    gap: { column: 10 },
                     flex: 1,
+                    gap: { column: 5 },
                 }}
             >
                 <ReactImgui.Node
-                    style={
-                        {
-                            // flex: 1,
-                        }
-                    }
+                    style={{
+                        flex: 1,
+                    }}
                 >
-                    <ReactImgui.Table ref={tableRef1} columns={tableColumns} clipRows={10} />
+                    <ReactImgui.Table ref={tableRef1} columns={tableColumns} clipRows={20} />
                 </ReactImgui.Node>
                 <ReactImgui.Node
-                    style={
-                        {
-                            // flex: 1,
-                        }
-                    }
+                    style={{
+                        flex: 1,
+                    }}
                 >
-                    <ReactImgui.Table ref={tableRef2} columns={tableColumns} clipRows={10} />
+                    <ReactImgui.Table ref={tableRef2} columns={tableColumns} clipRows={20} />
                 </ReactImgui.Node>
                 <ReactImgui.Node
-                    style={
-                        {
-                            // flex: 1,
-                        }
-                    }
+                    style={{
+                        flex: 1,
+                    }}
                 >
-                    <ReactImgui.Table ref={tableRef3} columns={tableColumns} clipRows={10} />
+                    <ReactImgui.Table ref={tableRef3} columns={tableColumns} clipRows={20} />
                 </ReactImgui.Node>
                 <ReactImgui.Node
-                    style={
-                        {
-                            // flex: 1,
-                        }
-                    }
+                    style={{
+                        flex: 1,
+                    }}
                 >
-                    <ReactImgui.Table ref={tableRef4} columns={tableColumns} clipRows={10} />
+                    <ReactImgui.Table ref={tableRef4} columns={tableColumns} clipRows={20} />
                 </ReactImgui.Node>
             </ReactImgui.Node>
             <ReactImgui.Node
                 style={{
-                    // width: "100%",
                     height: 50,
                     flexDirection: "row",
-                    justifyContent: "center",
-                    gap: { column: 10 },
+                    justifyContent: "flex-end",
                 }}
             >
                 <ReactImgui.Node style={{ width: 150 }}>

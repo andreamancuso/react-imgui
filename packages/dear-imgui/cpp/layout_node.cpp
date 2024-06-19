@@ -63,22 +63,24 @@ void LayoutNode::Render(ReactImgui* view) {
     float width = YGNodeLayoutGetWidth(m_node);
     float height = YGNodeLayoutGetHeight(m_node);
 
-    YGValue leftPosition = YGNodeStyleGetPosition(m_node, YGEdgeLeft);
+    // YGValue leftPosition = YGNodeStyleGetPosition(m_node, YGEdgeLeft);
 
     YGDirection direction = YGNodeLayoutGetDirection(m_node);
     bool hadOverflow = YGNodeLayoutGetHadOverflow(m_node);
 
-    ImGui::SetCursorPos(ImVec2(left, top)); // ?
+    ImGui::SetCursorPos(ImVec2(left, top)); // ?SetCursorScreenPos
 
-    ImGui::BeginChild("outer_child", ImVec2(width, height), ImGuiChildFlags_Border);
+    // ImGui::SetWindowPos(ImVec2(left, top));
 
-    ImGui::Text("%f,%f", left, top);
-    ImGui::Text("%f,%f", width, height);
-    ImGui::Text("%f %d", leftPosition.value, leftPosition.unit);
+    // ImGui::SetCursorScreenPos(ImVec2(left, top)); // ?
+
+    ImGui::PushID(m_id);
+    ImGui::BeginChild("##", ImVec2(width, height), ImGuiChildFlags_None);
 
     HandleChildren(view);
 
     ImGui::EndChild();
+    ImGui::PopID();
 
     /**
 float YGNodeLayoutGetMargin(YGNodeConstRef node, YGEdge edge) {
@@ -441,6 +443,10 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 printf("Setting %s\n", "width 100pct");
 
                 SetWidthPercent(100);
+            } else if (width == "30%") {
+                printf("Setting %s\n", "width 100pct");
+
+                SetWidthPercent(30);
             }
         }
     }
