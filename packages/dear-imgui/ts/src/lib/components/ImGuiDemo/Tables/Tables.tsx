@@ -99,7 +99,7 @@ export const Tables = () => {
             <ReactImgui.Node
                 style={{
                     width: "100%",
-                    height: 400,
+                    height: 200,
                     flexDirection: "row",
                     gap: { column: 5 },
                 }}

@@ -809,7 +809,7 @@ class Table final : public StyledWidget {
     public:
         TableData m_data;
         std::vector<TableColumn> m_columns;
-        int m_clipRows;
+        int m_clipRows; // todo: potentially redundant?
 
         inline static std::unique_ptr<Table> makeWidget(const json& widgetDef, std::optional<BaseStyle> maybeStyle, ReactImgui* view) {
             if (widgetDef.is_object()) {
