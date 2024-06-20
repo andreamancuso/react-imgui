@@ -1,12 +1,3 @@
-// Dear ImGui: standalone example application for Emscripten, using GLFW + WebGPU
-// (Emscripten is a C++-to-javascript compiler, used to publish executables for the web. See https://emscripten.org/)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -31,13 +22,14 @@ using json = nlohmann::json;
 
 class Widget;
 class LayoutNode;
+struct BaseStyle;
 
 class ReactImgui : public ImPlotView {
     private:
         std::unordered_map<int, rpp::subjects::replay_subject<TableData>> m_tableSubjects;
         std::mutex m_tableSubjectsMutex;
 
-        std::unordered_map<std::string, std::function<std::unique_ptr<Element>(const json&, ReactImgui*)>> m_element_init_fn;
+        std::unordered_map<std::string, std::function<std::unique_ptr<Element>(const json&, std::optional<BaseStyle>, ReactImgui*)>> m_element_init_fn;
 
         std::unordered_map<int, std::unique_ptr<Element>> m_elements;
         std::mutex m_elements_mutex;
@@ -91,6 +83,8 @@ class ReactImgui : public ImPlotView {
 
         void RenderChildren(int id);
 
+        void RenderElementTree(int id = 0);
+
         void RenderElements(int id = 0);
 
         void SetElement(std::string& elementJsonAsString);
@@ -122,6 +116,6 @@ class ReactImgui : public ImPlotView {
 };
 
 template <typename T, typename std::enable_if<std::is_base_of<Widget, T>::value, int>::type = 0>
-std::unique_ptr<T> makeWidget(const json& val, ReactImgui* view);
+std::unique_ptr<T> makeWidget(const json& val, std::optional<BaseStyle> maybeStyle, ReactImgui* view);
 
-std::unique_ptr<LayoutNode> makeNode(const json& val, ReactImgui* view);
+std::unique_ptr<Element> makeElement(const json& val, ReactImgui* view);

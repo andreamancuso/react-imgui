@@ -7,7 +7,6 @@
 #include <nlohmann/json.hpp>
 
 #include "shared.h"
-#include "element.h"
 
 using json = nlohmann::json;
 
@@ -15,25 +14,27 @@ using json = nlohmann::json;
 
 class ReactImgui;
 
-class LayoutNode : public Element {
+class LayoutNode {
     public:
         YGNodeRef m_node;
 
-        LayoutNode(int id);
+        // LayoutNode(int id);
 
-        virtual const char* GetElementType();
+        LayoutNode();
 
-        virtual void HandleChildren(ReactImgui* view);
+        // virtual const char* GetElementType();
 
-        virtual void PreRender(ReactImgui* view);
+        // virtual void HandleChildren(ReactImgui* view);
 
-        virtual void Render(ReactImgui* view);
+        // virtual void PreRender(ReactImgui* view);
 
-        virtual void PostRender(ReactImgui* view);
+        // virtual void Render(ReactImgui* view);
 
-        virtual void Patch(const json& elementPatchDef, ReactImgui* view);
+        // virtual void PostRender(ReactImgui* view);
 
-        static std::unique_ptr<LayoutNode> makeNode(const json& val, ReactImgui* view);
+        // virtual void Patch(const json& elementPatchDef, ReactImgui* view);
+
+        
 
         size_t GetChildCount();
 

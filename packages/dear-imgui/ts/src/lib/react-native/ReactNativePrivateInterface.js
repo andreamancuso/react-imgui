@@ -52,6 +52,7 @@ export default {
                                 title: true,
                                 clipRows: true,
                                 style: true,
+                                root: true,
                             },
                         };
 
@@ -61,6 +62,7 @@ export default {
                                 id: true,
                                 type: true,
                                 style: true,
+                                root: true,
                             },
                         };
                 }

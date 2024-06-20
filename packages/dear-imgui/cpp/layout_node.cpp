@@ -13,85 +13,15 @@
 
 using json = nlohmann::json;
 
-LayoutNode::LayoutNode(int id) : Element(id) {
+LayoutNode::LayoutNode() {
     m_node = YGNodeNew();
-    m_handlesChildrenWithinRenderMethod = true;
 }
-
-std::unique_ptr<LayoutNode> LayoutNode::makeNode(const json& nodeDef, ReactImgui* view) {
-    auto id = nodeDef["id"].template get<int>();
-    auto node = std::make_unique<LayoutNode>(id);
-
-    if (nodeDef.contains("style") && nodeDef["style"].is_object()) {
-        node->ApplyStyle(nodeDef["style"]);
-    }
-
-    return node;
-};
-
-const char* LayoutNode::GetElementType() {
-    return "node";
-};
 
 void LayoutNode::InsertChild(LayoutNode* child, size_t index) {
     // printf("Yoga Linking %d (%s) to %d (%s) using index %d\n", child->m_id, child->GetElementType(), m_id, GetElementType(), index);
 
     YGNodeInsertChild(m_node, child->m_node, index);
 };
-
-void LayoutNode::HandleChildren(ReactImgui* view) {
-    view->RenderChildren(m_id);
-};
-
-void LayoutNode::PreRender(ReactImgui* view) {};
-
-void LayoutNode::Render(ReactImgui* view) {
-    ImVec2 contentRegionAvail = ImGui::GetContentRegionAvail();
-
-    YGNodeRef owner = YGNodeGetOwner(m_node);
-
-    if (owner == nullptr) { // root
-        YGNodeCalculateLayout(m_node, contentRegionAvail.x, contentRegionAvail.y, YGDirectionLTR);
-    } else {
-
-    }
-
-    float left = YGNodeLayoutGetLeft(m_node);
-    float top = YGNodeLayoutGetTop(m_node);
-    float right = YGNodeLayoutGetRight(m_node);
-    float bottom = YGNodeLayoutGetBottom(m_node);
-    float width = YGNodeLayoutGetWidth(m_node);
-    float height = YGNodeLayoutGetHeight(m_node);
-
-    // YGValue leftPosition = YGNodeStyleGetPosition(m_node, YGEdgeLeft);
-
-    YGDirection direction = YGNodeLayoutGetDirection(m_node);
-    bool hadOverflow = YGNodeLayoutGetHadOverflow(m_node);
-
-    ImGui::SetCursorPos(ImVec2(left, top)); // ?SetCursorScreenPos
-
-    // ImGui::SetWindowPos(ImVec2(left, top));
-
-    // ImGui::SetCursorScreenPos(ImVec2(left, top)); // ?
-
-    ImGui::PushID(m_id);
-    ImGui::BeginChild("##", ImVec2(width, height), ImGuiChildFlags_None);
-
-    HandleChildren(view);
-
-    ImGui::EndChild();
-    ImGui::PopID();
-
-    /**
-float YGNodeLayoutGetMargin(YGNodeConstRef node, YGEdge edge) {
-float YGNodeLayoutGetBorder(YGNodeConstRef node, YGEdge edge) {
-float YGNodeLayoutGetPadding(YGNodeConstRef node, YGEdge edge) {
-
-ImGui::BeginChild("outer_child", ImVec2(0, ImGui::GetFontSize() * 20.0f), ImGuiChildFlags_Border);
-     */
-};
-
-void LayoutNode::PostRender(ReactImgui* view) {};
 
 std::optional<YGAlign> LayoutNode::ResolveAlignItems(std::string def) {
     std::optional<YGAlign> alignItems;
@@ -131,7 +61,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (direction.has_value()) {
-            printf("Setting %s\n", "direction");
+            // printf("Setting %s\n", "direction");
 
             SetDirection(direction.value());
         }
@@ -152,7 +82,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (flexDirection.has_value()) {
-            printf("Setting %s\n", "flexDirection");
+            // printf("Setting %s\n", "flexDirection");
 
             SetFlexDirection(flexDirection.value());
         }
@@ -177,7 +107,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (justifyContent.has_value()) {
-            printf("Setting %s: %s\n", "justifyContent", rawJustifyContent.c_str());
+            // printf("Setting %s: %s\n", "justifyContent", rawJustifyContent.c_str());
 
             SetJustifyContent(justifyContent.value());
         }
@@ -206,7 +136,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (alignContent.has_value()) {
-            printf("Setting %s: %s\n", "alignContent", rawAlignContent.c_str());
+            // printf("Setting %s: %s\n", "alignContent", rawAlignContent.c_str());
 
             SetAlignContent(alignContent.value());
         }
@@ -217,7 +147,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         std::optional<YGAlign> alignItems = ResolveAlignItems(def);
 
         if (alignItems.has_value()) {
-            printf("Setting %s: %s\n", "alignItems", def.c_str());
+            // printf("Setting %s: %s\n", "alignItems", def.c_str());
 
             SetAlignItems(alignItems.value());
         }
@@ -228,7 +158,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         std::optional<YGAlign> alignSelf = ResolveAlignItems(def);
 
         if (alignSelf.has_value()) {
-            printf("Setting %s: %s\n", "alignSelf", def.c_str());
+            // printf("Setting %s: %s\n", "alignSelf", def.c_str());
 
             SetAlignSelf(alignSelf.value());
         }
@@ -247,7 +177,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (positionType.has_value()) {
-            printf("Setting %s: %s\n", "positionType", rawPositionType.c_str());
+            // printf("Setting %s: %s\n", "positionType", rawPositionType.c_str());
 
             SetPositionType(positionType.value());
         }
@@ -266,7 +196,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (flexWrap.has_value()) {
-            printf("Setting %s: %s\n", "flexWrap", rawFlexWrap.c_str());
+            // printf("Setting %s: %s\n", "flexWrap", rawFlexWrap.c_str());
 
             SetFlexWrap(flexWrap.value());
         }
@@ -285,7 +215,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (overflow.has_value()) {
-            printf("Setting %s: %s\n", "overflow", rawOverflow.c_str());
+            // printf("Setting %s: %s\n", "overflow", rawOverflow.c_str());
 
             SetOverflow(overflow.value());
         }
@@ -302,26 +232,26 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
         }
 
         if (display.has_value()) {
-            printf("Setting %s: %s\n", "display", rawDisplay.c_str());
+            // printf("Setting %s: %s\n", "display", rawDisplay.c_str());
 
             SetDisplay(display.value());
         }
     }
     
     if (styleDef.contains("flex") && styleDef["flex"].is_number()) {
-        printf("Setting %s: %f\n", "flex", styleDef["flex"].template get<float>());
+        // printf("Setting %s: %f\n", "flex", styleDef["flex"].template get<float>());
 
         SetFlex(styleDef["flex"].template get<float>());
     }
     
     if (styleDef.contains("flexGrow") && styleDef["flexGrow"].is_number()) {
-        printf("Setting %s: %f\n", "flexGrow", styleDef["flexGrow"].template get<float>());
+        // printf("Setting %s: %f\n", "flexGrow", styleDef["flexGrow"].template get<float>());
 
         SetFlexGrow(styleDef["flexGrow"].template get<float>());
     }
     
     if (styleDef.contains("flexShrink") && styleDef["flexShrink"].is_number()) {
-        printf("Setting %s: %f\n", "flexShrink", styleDef["flexShrink"].template get<float>());
+        // printf("Setting %s: %f\n", "flexShrink", styleDef["flexShrink"].template get<float>());
 
         SetFlexShrink(styleDef["flexShrink"].template get<float>());
     }
@@ -331,7 +261,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
             // todo: what about percentage? Does it make sense to handle it here or below with an explicit property?
             SetFlexBasis(styleDef["flexBasis"].template get<float>());
 
-            printf("Setting %s\n", "flexBasis");
+            // printf("Setting %s\n", "flexBasis");
         } else if (styleDef["flexBasis"].is_string()) {
             auto flexBasis = styleDef["display"].template get<std::string>();
 
@@ -344,7 +274,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
     }
     
     if (styleDef.contains("flexBasisPercent") && styleDef["flexBasisPercent"].is_number()) {
-        printf("Setting %s\n", "flexBasisPercent");
+        // printf("Setting %s\n", "flexBasisPercent");
 
         SetFlexBasisPercent(styleDef["flexBasisPercent"].template get<float>());
     }
@@ -355,7 +285,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
-                    printf("Setting %s\n", "position");
+                    // printf("Setting %s\n", "position");
 
                     SetPosition(edge.value(), item.template get<float>());
                 }
@@ -369,7 +299,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
-                    printf("Setting %s\n", "margin");
+                    // printf("Setting %s\n", "margin");
 
                     SetMargin(edge.value(), item.template get<float>());
                 }
@@ -383,7 +313,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
-                    printf("Setting %s\n", "padding");
+                    // printf("Setting %s\n", "padding");
 
                     SetPadding(edge.value(), item.template get<float>());
                 }
@@ -397,7 +327,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 std::optional<YGEdge> edge = ResolveEdge(key);
                 // todo: what about percentage?
                 if (edge.has_value()) {
-                    printf("Setting %s\n", "border");
+                    // printf("Setting %s\n", "border");
 
                     SetBorder(edge.value(), item.template get<float>());
                 }
@@ -411,7 +341,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
                 std::optional<YGGutter> gutter = ResolveGutter(key);
                 // todo: what about percentage?
                 if (gutter.has_value()) {
-                    printf("Setting %s\n", "gap");
+                    // printf("Setting %s\n", "gap");
 
 
                     SetGap(gutter.value(), item.template get<float>());
@@ -421,7 +351,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
     }
 
     if (styleDef.contains("aspectRatio") && styleDef["aspectRatio"].is_number()) {
-        printf("Setting %s\n", "aspectRatio");
+        // printf("Setting %s\n", "aspectRatio");
 
         SetAspectRatio(styleDef["aspectRatio"].template get<float>());
     }
@@ -431,29 +361,25 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
             // todo: what about percentage?
             SetWidth(styleDef["width"].template get<float>());
 
-            printf("Setting %s: %f\n", "width", styleDef["width"].template get<float>());
+            // printf("Setting %s: %f\n", "width", styleDef["width"].template get<float>());
         } else if (styleDef["width"].is_string()) {
             auto width = styleDef["width"].template get<std::string>();
 
             if (width == "auto") {
-                printf("Setting %s\n", "auto width");
+                // printf("Setting %s\n", "auto width");
 
                 SetWidthAuto();
-            } else if (width == "100%") {
-                printf("Setting %s\n", "width 100pct");
+            } else {
+                // printf("Setting specific %s\n", "width");
 
-                SetWidthPercent(100);
-            } else if (width == "30%") {
-                printf("Setting %s\n", "width 100pct");
-
-                SetWidthPercent(30);
+                SetWidthPercent(charPercentageToFloat(width.c_str()));
             }
         }
     }
 
     if (styleDef.contains("minWidth")) {
         if (styleDef["minWidth"].is_number()) {
-            printf("Setting %s\n", "minWidth");
+            // printf("Setting %s\n", "minWidth");
             // todo: what about percentage?
             SetMinWidth(styleDef["minWidth"].template get<float>());
         }
@@ -461,7 +387,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
 
     if (styleDef.contains("maxWidth")) {
         if (styleDef["maxWidth"].is_number()) {
-            printf("Setting %s\n", "maxWidth");
+            // printf("Setting %s\n", "maxWidth");
             // todo: what about percentage?
             SetMaxWidth(styleDef["maxWidth"].template get<float>());
         }
@@ -469,18 +395,18 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
 
     if (styleDef.contains("height")) {
         if (styleDef["height"].is_number()) {
-            printf("Setting %s: %f\n", "height", styleDef["height"].template get<float>());
+            // printf("Setting %s: %f\n", "height", styleDef["height"].template get<float>());
             // todo: what about percentage?
             SetHeight(styleDef["height"].template get<float>());
         } else if (styleDef["height"].is_string()) {
             auto height = styleDef["height"].template get<std::string>();
 
             if (height == "auto") {
-                printf("Setting %s\n", "auto height");
+                // printf("Setting %s\n", "auto height");
                 SetHeightAuto();
-            } else if (height == "100%") {
-                printf("Setting %s\n", "100pct height");
-                SetHeightPercent(100);
+            } else {
+                // printf("Setting specific %s\n", "height");
+                SetHeightPercent(charPercentageToFloat(height.c_str()));
             }
         }
     }
@@ -488,7 +414,7 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
     if (styleDef.contains("minHeight")) {
         if (styleDef["minHeight"].is_number()) {
 
-            printf("Setting %s\n", "minHeight");
+            // printf("Setting %s\n", "minHeight");
             // todo: what about percentage?
             SetMinHeight(styleDef["minHeight"].template get<float>());
         }
@@ -496,16 +422,10 @@ void LayoutNode::ApplyStyle(const json& styleDef) {
 
     if (styleDef.contains("maxHeight")) {
         if (styleDef["maxHeight"].is_number()) {
-            printf("Setting %s\n", "maxHeight");
+            // printf("Setting %s\n", "maxHeight");
             // todo: what about percentage?
             SetMaxHeight(styleDef["maxHeight"].template get<float>());
         }
-    }
-};
-
-void LayoutNode::Patch(const json& nodeDef, ReactImgui* view) {
-    if (nodeDef.contains("style") && nodeDef["style"].is_object()) {
-        ApplyStyle(nodeDef["style"]);
     }
 };
 

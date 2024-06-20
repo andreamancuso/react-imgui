@@ -85,7 +85,7 @@ export const ImGuiDemo = () => {
 
     return (
         <ReactImgui.Fragment>
-            <ReactImgui.UnformattedText
+            {/* <ReactImgui.UnformattedText
                 text={`dear imgui says hello! ${faIconMap["address-book"]} ${faIconMap["wine-bottle"]}`}
                 style={styleSheet.title}
             />
@@ -169,7 +169,7 @@ export const ImGuiDemo = () => {
                     />
                     <ReactImgui.UnformattedText text={text} />
                 </ReactImgui.Child>
-            </ReactImgui.DIWindow>
+            </ReactImgui.DIWindow> */}
 
             <ReactImgui.DIWindow title="tables" width={1000} height={600}>
                 <Tables />

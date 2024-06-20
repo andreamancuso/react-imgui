@@ -15,7 +15,7 @@ export type FontDef = {
 };
 
 export type StyleProps = {
-    style?: StyleRules;
+    style?: StyleRules & YogaStyle;
 };
 
 export type TabItemChangeEvent = SyntheticEvent<WidgetReactElement<"TabItem">, { value: boolean }>;
@@ -169,10 +169,12 @@ export type ReactElementWidget<
     ? { [L in keyof Omit<P, "children">]: P[L] } & {
           id: string;
           type: K;
+          root?: boolean;
           children?: WidgetReactNode;
       } & { onChange?: any; onClick?: any }
     : { [L in keyof Omit<P, "children">]: P[L] } & {
           type: K;
+          root?: boolean;
           children?: WidgetReactNode;
       };
 
@@ -183,6 +185,7 @@ type ReactElementWidgets = {
 export type ReactElementWidgetsFlat = ReactElementWidgets[keyof ReactElementWidgets];
 
 export type YogaNode = {
+    root?: boolean;
     style?: YogaStyle;
     children?: WidgetReactNode;
 };

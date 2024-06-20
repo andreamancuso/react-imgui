@@ -1,12 +1,3 @@
-// Dear ImGui: standalone example application for Emscripten, using GLFW + WebGPU
-// (Emscripten is a C++-to-javascript compiler, used to publish executables for the web. See https://emscripten.org/)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include <optional>
 #include <tuple>
 #include <cstring>
@@ -15,6 +6,8 @@
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <nlohmann/json.hpp>
+
+#include "layout_node.h"
 
 using json = nlohmann::json;
 
@@ -26,19 +19,27 @@ class Element {
     public:
         int m_id;
         bool m_handlesChildrenWithinRenderMethod;
+        bool m_isRoot;
+        std::unique_ptr<LayoutNode> m_layoutNode;
 
-        Element(int id);
+        Element(int id, bool isRoot);
 
-        virtual const char* GetElementType() = 0;
+        static std::unique_ptr<Element> makeElement(const json& val, ReactImgui* view);
 
-        virtual void HandleChildren(ReactImgui* view) = 0;
+        virtual const char* GetElementType();
 
-        virtual void PreRender(ReactImgui* view) = 0;
+        virtual void HandleChildren(ReactImgui* view);
 
-        virtual void Render(ReactImgui* view) = 0;
+        virtual void PreRender(ReactImgui* view);
 
-        virtual void PostRender(ReactImgui* view) = 0;
+        virtual void Render(ReactImgui* view);
 
-        virtual void Patch(const json& elementPatchDef, ReactImgui* view) = 0;
+        virtual void PostRender(ReactImgui* view);
+
+        virtual void Patch(const json& elementPatchDef, ReactImgui* view);
+
+        virtual float GetLayoutLeftFromParentNode(YGNodeRef node, float left = 0);
+
+        virtual float GetLayoutTopFromParentNode(YGNodeRef node, float top = 0);
 };
 

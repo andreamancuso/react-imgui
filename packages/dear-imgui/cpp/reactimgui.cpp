@@ -1,12 +1,3 @@
-// Dear ImGui: standalone example application for Emscripten, using GLFW + WebGPU
-// (Emscripten is a C++-to-javascript compiler, used to publish executables for the web. See https://emscripten.org/)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include <cstring>
 #include <string>
 #include <functional>
@@ -31,12 +22,12 @@
 using json = nlohmann::json;
 
 template <typename T, typename std::enable_if<std::is_base_of<Widget, T>::value, int>::type>
-std::unique_ptr<T> makeWidget(const json& val, ReactImgui* view) {
-    return T::makeWidget(val, view);
+std::unique_ptr<T> makeWidget(const json& val, std::optional<BaseStyle> maybeStyle, ReactImgui* view) {
+    return T::makeWidget(val, maybeStyle, view);
 }
 
-std::unique_ptr<LayoutNode> makeNode(const json& val, ReactImgui* view) {
-    return LayoutNode::makeNode(val, view);
+std::unique_ptr<Element> makeElement(const json& val, ReactImgui* view) {
+    return Element::makeElement(val, view);
 }
 
 ReactImgui::ReactImgui(
@@ -60,8 +51,6 @@ void ReactImgui::SetUpObservables() {
 };
 
 void ReactImgui::SetUpElementCreatorFunctions() {
-    m_element_init_fn["Node"] = &makeNode;
-
     m_element_init_fn["Group"] = &makeWidget<Group>;
     m_element_init_fn["Child"] = &makeWidget<Child>;
     m_element_init_fn["DIWindow"] = &makeWidget<Window>;
@@ -124,14 +113,23 @@ void ReactImgui::InitElement(const json& elementDef) {
     if (elementDef.is_object() && elementDef.contains("type")) {
         std::string type = elementDef["type"].template get<std::string>();
 
-        if (m_element_init_fn.contains(type)) {
+        if (m_element_init_fn.contains(type) || type == "Node") {
             int id = elementDef["id"].template get<int>();
 
             const std::lock_guard<std::mutex> elementLock(m_elements_mutex);
             const std::lock_guard<std::mutex> hierarchyLock(m_hierarchy_mutex);
 
-            m_elements[id] = m_element_init_fn[type](elementDef, this);
+            if (type == "Node") {
+                m_elements[id] = makeElement(elementDef, this);
+            } else if (m_element_init_fn.contains(type)) {
+                m_elements[id] = m_element_init_fn[type](elementDef, StyledWidget::ExtractStyle(elementDef, this), this);
+            }
+            
             m_hierarchy[id] = std::vector<int>();
+
+            if (elementDef.is_object() && elementDef.contains("style") && elementDef["style"].is_object()) {
+                m_elements[id]->m_layoutNode->ApplyStyle(elementDef["style"]);
+            }
 
             if (type == "Table") {
                 const std::lock_guard<std::mutex> lock(m_tableSubjectsMutex);
@@ -252,6 +250,41 @@ void ReactImgui::PrepareForRender() {
     }
 };
 
+void ReactImgui::RenderElementTree(int id) {
+    if (m_elements.contains(id)) {
+        float left = YGNodeLayoutGetLeft(m_elements[id]->m_layoutNode->m_node);
+        float top = YGNodeLayoutGetTop(m_elements[id]->m_layoutNode->m_node);
+        float width = YGNodeLayoutGetWidth(m_elements[id]->m_layoutNode->m_node);
+        float height = YGNodeLayoutGetHeight(m_elements[id]->m_layoutNode->m_node);
+
+        if (!YGFloatIsUndefined(width)) {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+            ImGui::Text("%d", id);
+
+            ImGui::TableNextColumn();
+
+            ImGui::Text("%d", m_elements[id]->m_layoutNode->GetChildCount());
+
+            ImGui::TableNextColumn();
+
+            ImGui::Text("l: %f t: %f w: %f h: %f", 
+                YGNodeLayoutGetLeft(m_elements[id]->m_layoutNode->m_node), 
+                YGNodeLayoutGetTop(m_elements[id]->m_layoutNode->m_node), 
+                YGNodeLayoutGetWidth(m_elements[id]->m_layoutNode->m_node), 
+                YGNodeLayoutGetHeight(m_elements[id]->m_layoutNode->m_node)
+            );
+        }
+    }
+
+    if (m_hierarchy.contains(id)) {
+        for (auto& childId : m_hierarchy[id]) {
+            RenderElementTree(childId);
+        }
+    }
+};
+
 void ReactImgui::Render(int window_width, int window_height) {
     SetCurrentContext();
 
@@ -271,6 +304,25 @@ void ReactImgui::Render(int window_width, int window_height) {
     ImGui::Begin(m_windowId, NULL, m_window_flags);
 
     RenderElements();
+
+    // *** DEBUG ***
+    ImGui::SetNextWindowSize(ImVec2(800, 700));
+    ImGui::Begin("element-tree", NULL);
+
+    if (ImGui::BeginTable("Elements", 3, ImGuiTableFlags_BordersV | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_NoBordersInBody)) {
+        ImGui::TableSetupColumn("Widget ID", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Child Count", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Properties", ImGuiTableColumnFlags_NoHide | ImGuiTableColumnFlags_WidthStretch);
+
+        ImGui::TableHeadersRow();
+
+        RenderElementTree();
+
+        ImGui::EndTable();
+    }
+    
+    ImGui::End();
+    // *** END DEBUG ***
 
     ImGui::End();
     ImGui::Render();
@@ -385,26 +437,24 @@ void ReactImgui::PatchElement(int id, std::string& elementJsonAsString) {
     }
 };
 
-void ReactImgui::SetChildren(int id, const std::vector<int>& childrenIds) {
+void ReactImgui::SetChildren(int parentId, const std::vector<int>& childrenIds) {
     const std::lock_guard<std::mutex> elementsLock(m_hierarchy_mutex);
     const std::lock_guard<std::mutex> hierarchyLock(m_elements_mutex);
 
-    if (m_elements.contains(id) && m_elements[id]->GetElementType() == "node") {
-        auto parentNode = static_cast<LayoutNode*>(m_elements[id].get());
+    if (m_elements.contains(parentId)) {
         auto size = childrenIds.size();
+        auto childCount = m_elements[parentId]->m_layoutNode->GetChildCount();
 
         for (int i = 0; i < size; i++) {
             auto childId = childrenIds[i];
 
-            if (m_elements.contains(childId) && m_elements[childId]->GetElementType() == "node") {
-                auto childNode = static_cast<LayoutNode*>(m_elements[childId].get());
-
-                parentNode->InsertChild(childNode, i);
+            if (m_elements.contains(childId)) {
+                m_elements[parentId]->m_layoutNode->InsertChild(m_elements[childId]->m_layoutNode.get(), i);
             }
         }
     }
 
-    m_hierarchy[id] = childrenIds;
+    m_hierarchy[parentId] = childrenIds;
 };
 
 void ReactImgui::AppendChild(int parentId, int childId) {
@@ -413,13 +463,10 @@ void ReactImgui::AppendChild(int parentId, int childId) {
             const std::lock_guard<std::mutex> lock(m_hierarchy_mutex);
             const std::lock_guard<std::mutex> elementsLock(m_hierarchy_mutex);
 
-            if (m_elements[parentId]->GetElementType() == "node" && m_elements[childId]->GetElementType() == "node") {
-                auto parentNode = static_cast<LayoutNode*>(m_elements[parentId].get());
-                auto childNode = static_cast<LayoutNode*>(m_elements[childId].get());
+            if (!m_elements[childId]->m_isRoot) {
+                auto childCount = m_elements[parentId]->m_layoutNode->GetChildCount();
 
-                auto childCount = parentNode->GetChildCount();
-
-                parentNode->InsertChild(childNode, childCount);
+                m_elements[parentId]->m_layoutNode->InsertChild(m_elements[childId]->m_layoutNode.get(), childCount);
             }
 
             m_hierarchy[parentId].push_back(childId);
