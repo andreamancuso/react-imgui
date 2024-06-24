@@ -6,6 +6,7 @@ import { Checkbox } from "./Checkbox";
 import { CollapsingHeader } from "./CollapsingHeader";
 import { Combo } from "./Combo";
 import { Fragment } from "./Fragment";
+import { Node } from "./Node";
 import { Indent } from "./Indent";
 import { InputText } from "./InputText";
 import { ItemTooltip } from "./ItemTooltip";
@@ -54,6 +55,7 @@ export const components = {
     TabItem,
     Table,
     ClippedMultiLineTextRenderer,
+    Node,
 } as const;
 
 export const ReactImgui = attachSubComponents("ReactImgui", MainComponent, components);

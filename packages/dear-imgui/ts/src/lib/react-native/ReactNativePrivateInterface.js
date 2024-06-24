@@ -52,6 +52,17 @@ export default {
                                 title: true,
                                 clipRows: true,
                                 style: true,
+                                root: true,
+                            },
+                        };
+
+                    case "node":
+                        return {
+                            validAttributes: {
+                                id: true,
+                                type: true,
+                                style: true,
+                                root: true,
                             },
                         };
                 }

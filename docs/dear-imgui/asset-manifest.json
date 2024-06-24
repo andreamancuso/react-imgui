@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/react-wasm/dear-imgui/static/css/main.6933c6d5.css",
-    "main.js": "/react-wasm/dear-imgui/static/js/main.aec4e16a.js",
+    "main.js": "/react-wasm/dear-imgui/static/js/main.12965237.js",
     "static/js/453.6b80a84f.chunk.js": "/react-wasm/dear-imgui/static/js/453.6b80a84f.chunk.js",
     "static/media/reactDearImgui.data": "/react-wasm/dear-imgui/static/media/reactDearImgui.84d29b1f82dc28232253.data",
     "index.html": "/react-wasm/dear-imgui/index.html",
     "main.6933c6d5.css.map": "/react-wasm/dear-imgui/static/css/main.6933c6d5.css.map",
-    "main.aec4e16a.js.map": "/react-wasm/dear-imgui/static/js/main.aec4e16a.js.map",
+    "main.12965237.js.map": "/react-wasm/dear-imgui/static/js/main.12965237.js.map",
     "453.6b80a84f.chunk.js.map": "/react-wasm/dear-imgui/static/js/453.6b80a84f.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.6933c6d5.css",
-    "static/js/main.aec4e16a.js"
+    "static/js/main.12965237.js"
   ]
 }

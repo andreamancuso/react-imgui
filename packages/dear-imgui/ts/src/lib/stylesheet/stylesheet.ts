@@ -1,10 +1,11 @@
 import { ImGuiCol, ImGuiStyleVar, ImVec2 } from "../wasm/wasm-app-types";
-import { StyleColValue, StyleVarValue } from "./imgui-style";
+import { StyleColValue } from "./imgui-style";
+import { YogaStyle } from "./yoga-style";
 
 export type StyleRules = {
     align?: "left" | "right";
-    width?: number; // Currently % based; supported on a subset of widgets
-    height?: number; // Currently % based; supported on a subset of widgets
+    // width?: number; // Currently % based; supported on a subset of widgets
+    // height?: number; // Currently % based; supported on a subset of widgets
     font?: {
         name: string;
         size: number;
@@ -47,7 +48,7 @@ export type StyleRules = {
 };
 
 export type RWStyleSheet = {
-    [k: string]: StyleRules;
+    [k: string]: StyleRules & YogaStyle;
 };
 
 const RWStyleSheet = {

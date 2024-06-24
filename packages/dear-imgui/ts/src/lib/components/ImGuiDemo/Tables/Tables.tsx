@@ -1,8 +1,8 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { ReactImgui } from "src/lib/components/ReactImgui/components";
 import { TableImperativeHandle } from "../../ReactImgui/Table";
 import RWStyleSheet from "src/lib/stylesheet/stylesheet";
-import { ImGuiCol, ImGuiStyleVar } from "src/lib/wasm/wasm-app-types";
+import { ImGuiCol } from "src/lib/wasm/wasm-app-types";
 
 const sampleData = [
     { id: "1", name: "Name" },
@@ -15,11 +15,11 @@ const sampleData = [
 const styleSheet = RWStyleSheet.create({
     primaryButton: {
         colors: { [ImGuiCol.Button]: "ff6e59" },
-        vars: { [ImGuiStyleVar.FramePadding]: [40, 3] },
-        width: 0.5,
+        // vars: { [ImGuiStyleVar.FramePadding]: [40, 3] },
+        width: 150,
     },
     secondaryButton: {
-        width: 0.5,
+        width: 150,
     },
 });
 
@@ -77,23 +77,79 @@ export const Tables = () => {
         }
     }, []);
 
+    // use case: align both buttons at the right hand side of the container
+
+    // TODO: work out `root` automatically as having multiple root nodes can lead to major layout issues - not always immediately obvious...
+
     return (
-        <ReactImgui.Fragment>
-            <ReactImgui.SameLine>
-                <ReactImgui.Child width={250} height={-60}>
-                    <ReactImgui.Table ref={tableRef1} columns={tableColumns} clipRows={10} />
-                </ReactImgui.Child>
-                <ReactImgui.Child width={250} height={-60}>
-                    <ReactImgui.Table ref={tableRef2} columns={tableColumns} clipRows={10} />
-                </ReactImgui.Child>
-                <ReactImgui.Child width={250} height={-60}>
-                    <ReactImgui.Table ref={tableRef3} columns={tableColumns} clipRows={10} />
-                </ReactImgui.Child>
-                <ReactImgui.Child width={250} height={-60}>
-                    <ReactImgui.Table ref={tableRef4} columns={tableColumns} clipRows={10} />
-                </ReactImgui.Child>
-            </ReactImgui.SameLine>
-            <ReactImgui.SameLine>
+        <ReactImgui.Node
+            root
+            style={{
+                width: "100%",
+                height: "100%",
+                flexDirection: "column",
+                margin: {
+                    left: 5,
+                    top: 25,
+                    right: 5,
+                },
+                gap: { row: 5 },
+            }}
+        >
+            <ReactImgui.Node
+                style={{
+                    width: "100%",
+                    height: 200,
+                    flexDirection: "row",
+                    gap: { column: 5 },
+                }}
+            >
+                <ReactImgui.Table
+                    ref={tableRef1}
+                    columns={tableColumns}
+                    clipRows={10}
+                    style={{
+                        flex: 1,
+                        height: "100%",
+                    }}
+                />
+                <ReactImgui.Table
+                    ref={tableRef2}
+                    columns={tableColumns}
+                    clipRows={10}
+                    style={{
+                        flex: 1,
+                        height: "100%",
+                    }}
+                />
+                <ReactImgui.Table
+                    ref={tableRef3}
+                    columns={tableColumns}
+                    clipRows={10}
+                    style={{
+                        flex: 1,
+                        height: "100%",
+                    }}
+                />
+                <ReactImgui.Table
+                    ref={tableRef4}
+                    columns={tableColumns}
+                    clipRows={10}
+                    style={{
+                        flex: 1,
+                        height: "100%",
+                    }}
+                />
+            </ReactImgui.Node>
+            <ReactImgui.Node
+                style={{
+                    width: "100%",
+                    height: 30,
+                    flexDirection: "row",
+                    justifyContent: "flex-end",
+                    gap: { column: 5 },
+                }}
+            >
                 <ReactImgui.Button
                     onClick={handleAppendDataToTableClick}
                     label="Add data to table"
@@ -104,7 +160,7 @@ export const Tables = () => {
                     label="Stop adding data"
                     style={styleSheet.secondaryButton}
                 />
-            </ReactImgui.SameLine>
-        </ReactImgui.Fragment>
+            </ReactImgui.Node>
+        </ReactImgui.Node>
     );
 };

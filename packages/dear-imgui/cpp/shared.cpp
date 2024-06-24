@@ -27,6 +27,13 @@ ImVec4 HEXAtoIV4(const char* hex) {
 	return HEXAtoIV4(hex, 1.0f);
 }
 
+float charPercentageToFloat(const char* input) {
+    float value;
+    std::sscanf(input, "%f%%", &value);
+
+    return value;
+}
+
 json IV4toJson(ImVec4 imVec4) {
     json j = {
         {"x", imVec4.x},

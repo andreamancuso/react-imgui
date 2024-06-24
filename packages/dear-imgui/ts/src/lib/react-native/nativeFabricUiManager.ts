@@ -49,7 +49,7 @@ export default class {
         generatedId: number,
         uiViewClassName: string,
         requiresClone: boolean,
-        payload: any,
+        payload: Record<string, any> | null,
         fiberNode: any,
     ) => {
         // todo: yikes
@@ -57,35 +57,39 @@ export default class {
             this.cloningNode = null;
         }
 
-        const { children, type, id, ...props } = payload;
+        let element: any = { id: generatedId };
 
-        // if (type === "Table") {
-        //     console.log(
-        //         "createNode",
-        //         generatedId,
-        //         uiViewClassName,
-        //         requiresClone,
-        //         payload,
-        //         fiberNode,
-        //     );
-        // }
+        // console.log("createNode", generatedId, uiViewClassName, requiresClone, payload, fiberNode);
 
-        const widget = { ...props, id: generatedId, type };
+        if (payload) {
+            const { children, type, id, elementType, ...props } = payload;
 
-        this.wasmModule?.setWidget(JSON.stringify(widget));
+            element = {
+                ...element,
+                ...props,
+                type: fiberNode.type === "node" ? "Node" : type,
+            };
 
-        this.fiberNodesMap.set(generatedId, fiberNode);
-
-        // todo: type is in some array of types
-        if (this.linkedWidgetTypes.includes(type)) {
-            this.widgetRegistrationService?.linkWidgetIds(id, generatedId);
+            // todo: type is in some array of types
+            if (this.linkedWidgetTypes.includes(type)) {
+                this.widgetRegistrationService?.linkWidgetIds(id, generatedId);
+            }
+        } else {
+            element.type = "Node";
         }
 
-        return widget;
+        // console.log(JSON.stringify(widget));
+
+        this.fiberNodesMap.set(generatedId, fiberNode);
+        this.wasmModule?.setElement(JSON.stringify(element));
+
+        // console.log(fiberNode);
+
+        return element;
     };
     cloneNodeWithNewProps = (node: any, newProps: any) => {
         const newWidget = { ...node, ...newProps };
-        this.wasmModule?.patchWidget(node.id, JSON.stringify(newWidget));
+        this.wasmModule?.patchElement(node.id, JSON.stringify(newWidget));
 
         return newWidget;
     };

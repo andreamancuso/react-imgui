@@ -1,12 +1,3 @@
-// Dear ImGui: standalone example application for Emscripten, using GLFW + WebGPU
-// (Emscripten is a C++-to-javascript compiler, used to publish executables for the web. See https://emscripten.org/)
-
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
 #include <cstring>
 #include <string>
 #include <sstream>
@@ -24,27 +15,30 @@
 using json = nlohmann::json;
 
 #include "shared.h"
+#include "element.h"
 #include "implotview.h"
 
 #pragma once
 
 class Widget;
+class LayoutNode;
+struct BaseStyle;
 
 class ReactImgui : public ImPlotView {
     private:
         std::unordered_map<int, rpp::subjects::replay_subject<TableData>> m_tableSubjects;
         std::mutex m_tableSubjectsMutex;
 
-        std::unordered_map<std::string, std::function<std::unique_ptr<Widget>(const json&, ReactImgui*)>> m_widget_init_fn;
+        std::unordered_map<std::string, std::function<std::unique_ptr<Element>(const json&, std::optional<BaseStyle>, ReactImgui*)>> m_element_init_fn;
 
-        std::unordered_map<int, std::unique_ptr<Widget>> m_widgets;
-        std::mutex m_widgets_mutex;
+        std::unordered_map<int, std::unique_ptr<Element>> m_elements;
+        std::mutex m_elements_mutex;
 
-        void InitWidget(const json& widgetDef);
+        void InitElement(const json& elementDef);
         
         void SetUpFloatFormatChars();
 
-        void SetUpWidgetCreatorFunctions();
+        void SetUpElementCreatorFunctions();
         
         void HandleTableData(int id, TableData val);
         
@@ -70,7 +64,7 @@ class ReactImgui : public ImPlotView {
             std::optional<std::string>& rawStyleOverridesDefs
         );
 
-        void RenderWidgetById(int id);
+        void RenderElementById(int id);
 
         void SetEventHandlers(
             OnTextChangedCallback onInputTextChangeFn,
@@ -89,11 +83,13 @@ class ReactImgui : public ImPlotView {
 
         void RenderChildren(int id);
 
-        void RenderWidgets(int id = 0);
+        void RenderElementTree(int id = 0);
 
-        void SetWidget(std::string& widgetJsonAsString);
+        void RenderElements(int id = 0);
 
-        void PatchWidget(int id, std::string& widgetJsonAsString);
+        void SetElement(std::string& elementJsonAsString);
+
+        void PatchElement(int id, std::string& elementJsonAsString);
 
         void SetChildren(int id, const std::vector<int>& childIds);
 
@@ -119,3 +115,7 @@ class ReactImgui : public ImPlotView {
         void PatchStyle(const json& styleDef);
 };
 
+template <typename T, typename std::enable_if<std::is_base_of<Widget, T>::value, int>::type = 0>
+std::unique_ptr<T> makeWidget(const json& val, std::optional<BaseStyle> maybeStyle, ReactImgui* view);
+
+std::unique_ptr<Element> makeElement(const json& val, ReactImgui* view);

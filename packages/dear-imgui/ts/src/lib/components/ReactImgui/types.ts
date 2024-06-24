@@ -3,6 +3,7 @@ import { ReactImgui } from "./components";
 import { MainComponentProps } from "../ReactImgui";
 import { StyleRules } from "src/lib/stylesheet/stylesheet";
 import { ImVec2 } from "src/lib/wasm/wasm-app-types";
+import { YogaStyle } from "src/lib/stylesheet/yoga-style";
 
 export type Primitive = string | number | boolean;
 
@@ -14,7 +15,7 @@ export type FontDef = {
 };
 
 export type StyleProps = {
-    style?: StyleRules;
+    style?: StyleRules & YogaStyle;
 };
 
 export type TabItemChangeEvent = SyntheticEvent<WidgetReactElement<"TabItem">, { value: boolean }>;
@@ -168,10 +169,12 @@ export type ReactElementWidget<
     ? { [L in keyof Omit<P, "children">]: P[L] } & {
           id: string;
           type: K;
+          root?: boolean;
           children?: WidgetReactNode;
       } & { onChange?: any; onClick?: any }
     : { [L in keyof Omit<P, "children">]: P[L] } & {
           type: K;
+          root?: boolean;
           children?: WidgetReactNode;
       };
 
@@ -180,6 +183,12 @@ type ReactElementWidgets = {
 };
 
 export type ReactElementWidgetsFlat = ReactElementWidgets[keyof ReactElementWidgets];
+
+export type YogaNode = {
+    root?: boolean;
+    style?: YogaStyle;
+    children?: WidgetReactNode;
+};
 
 export type ImguiWidget<
     K extends WidgetKeys,
