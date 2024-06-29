@@ -10,3 +10,10 @@
 [submodule "packages/dear-imgui/cpp/deps/vcpkg"]
 	path = packages/dear-imgui/cpp/deps/vcpkg
 	url = https://github.com/microsoft/vcpkg.git
+[submodule "packages/dear-imgui/cpp/deps/mapbox-base"]
+	path = packages/dear-imgui/cpp/deps/mapbox-base
+	url = https://github.com/mapbox/mapbox-base.git
+[submodule "packages/dear-imgui/cpp/deps/maplibre-native-fork"]
+	path = packages/dear-imgui/cpp/deps/maplibre-native-fork
+	url = https://github.com/andreamancuso/maplibre-native.git
+	branch = try/emscripten

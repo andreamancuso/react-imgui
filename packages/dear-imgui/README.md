@@ -6,14 +6,22 @@ Please note that only Chrome, Edge and [Firefox Nightlies](https://www.mozilla.o
 
 We provide instructions for manual setup on Windows as well as a devcontainer configuration. We **strongly** recommend to use the Dev Container approach.
 
+### Building maplibre-native
+
+-   `cd packages/dear-imgui/cpp/deps/maplibre-native`
+-   Open `packages/dear-imgui/cpp/deps/maplibre-native/CMakeLists.txt`
+-   Comment out `$<$<CXX_COMPILER_ID:MSVC>:/WX>`
+-   `cmake . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DMLN_WITH_CORE_ONLY=1 -DMLN_WITH_WERROR=OFF`
+-   `cmake --build build`
+
 ### Requirements for devcontainer-based setup (massive kudos to [@genautz](https://github.com/genautz))
 
 We recommend you let VS Code clone the repo in a separate Docker volume
 
-- [VS Code](https://code.visualstudio.com/)
-    -  Install extension `Dev Containers`, Id: `ms-vscode-remote.remote-containers` [Marketplace Link](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
-    -  Install extension `WSL` Id: `ms-vscode-remote.remote-wsl` [Marketplace Link](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+-   [VS Code](https://code.visualstudio.com/)
+    -   Install extension `Dev Containers`, Id: `ms-vscode-remote.remote-containers` [Marketplace Link](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+    -   Install extension `WSL` Id: `ms-vscode-remote.remote-wsl` [Marketplace Link](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl)
+-   [Docker Desktop](https://www.docker.com/products/docker-desktop/)
 
 #### Building (Dev Container)
 
@@ -23,7 +31,7 @@ We recommend you let VS Code clone the repo in a separate Docker volume
 
 Note: no need to run `emsdk_env` as this has already been added to `.bash_profile`
 
-----
+---
 
 ### Requirements for manual setup
 
